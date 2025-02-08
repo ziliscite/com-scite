@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/ziliscite/micro-auth/pkg/protobuf";
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  User response = 3;
+}
+
+message Token {
+  string token = 1;
+  // Unix timestamp for expiration time
+  int64 expiration = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  Token response = 3;
+}

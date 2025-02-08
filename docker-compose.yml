@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres
+    ports:
+      - "5433:5432"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./.volume/db-data/postgres/:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d users"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - micro-network
+
+  auth:
+    build:
+      context: ./auth
+      dockerfile: ./auth.dockerfile
+    restart: always
+    ports:
+      - "8001:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DB_DSN: ${DB_DSN}
+      JWT_SECRETS: ${JWT_SECRETS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - micro-network
+
+networks:
+  micro-network:
+    driver: bridge
