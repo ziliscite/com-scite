@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-type client struct {
-	rc *amqp.Connection
-	mr *internal.Mailer
-}
-
 func main() {
 	cfg := getConfig()
 
@@ -24,6 +19,15 @@ func main() {
 
 	mailer := internal.New(cfg.mail.host, cfg.mail.port, cfg.mail.username, cfg.mail.password, cfg.mail.sender)
 
-	cl := &client{conn, mailer}
-	cl.sendEmail()
+	msrv, err := newService(conn, mailer)
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+
+	err = msrv.listen()
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
 }

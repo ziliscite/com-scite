@@ -6,10 +6,11 @@ option go_package = "github.com/ziliscite/micro-auth/pkg/protobuf";
 
 service ActivationService {
   rpc CreateActivation(ActivationRequest) returns (ActivationResponse);
+  rpc ActivateUser(ActivateRequest) returns (ActivateResponse);
 }
 
 message ActivationRequest {
-  int64 id = 1;
+  int64 user_id = 1;
   string username = 2;
   string email = 3;
 }
@@ -17,3 +18,12 @@ message ActivationRequest {
 message ActivationResponse {
   string status = 1;
 }
+
+message ActivateRequest {
+  string token_string = 1;
+}
+
+message ActivateResponse {
+  int64 user_id = 1;
+}
+

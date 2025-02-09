@@ -5,6 +5,7 @@ go 1.23.4
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/jackc/pgx/v4 v4.18.3
+	github.com/rabbitmq/amqp091-go v1.10.0
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2
 )

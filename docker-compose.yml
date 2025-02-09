@@ -112,6 +112,8 @@ services:
     depends_on:
       token_db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - micro-network
 
@@ -126,9 +128,9 @@ services:
       mode: replicated
       replicas: 1
     environment:
-      SMTP_USERNAME: ""
-      SMTP_PASSWORD: ""
-      SMTP_SENDER: "Ziliscite <no-reply@ziliscite.co.id>"
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_SENDER: ${SMTP_SENDER}
     depends_on:
       mailhog:
         condition: service_healthy
