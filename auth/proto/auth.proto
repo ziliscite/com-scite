@@ -22,7 +22,8 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
-  User response = 3;
+  User response = 1;
+  string status = 2;
 }
 
 message Token {
@@ -37,5 +38,5 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  Token response = 3;
+  Token response = 1;
 }

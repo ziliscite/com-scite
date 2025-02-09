@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ActivationService_CreateActivation_FullMethodName = "/activation.ActivationService/CreateActivation"
+	ActivationService_ActivateUser_FullMethodName     = "/activation.ActivationService/ActivateUser"
 )
 
 // ActivationServiceClient is the client API for ActivationService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ActivationServiceClient interface {
 	CreateActivation(ctx context.Context, in *ActivationRequest, opts ...grpc.CallOption) (*ActivationResponse, error)
+	ActivateUser(ctx context.Context, in *ActivateRequest, opts ...grpc.CallOption) (*ActivateResponse, error)
 }
 
 type activationServiceClient struct {
@@ -47,11 +49,22 @@ func (c *activationServiceClient) CreateActivation(ctx context.Context, in *Acti
 	return out, nil
 }
 
+func (c *activationServiceClient) ActivateUser(ctx context.Context, in *ActivateRequest, opts ...grpc.CallOption) (*ActivateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ActivateResponse)
+	err := c.cc.Invoke(ctx, ActivationService_ActivateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ActivationServiceServer is the server API for ActivationService service.
 // All implementations must embed UnimplementedActivationServiceServer
 // for forward compatibility.
 type ActivationServiceServer interface {
 	CreateActivation(context.Context, *ActivationRequest) (*ActivationResponse, error)
+	ActivateUser(context.Context, *ActivateRequest) (*ActivateResponse, error)
 	mustEmbedUnimplementedActivationServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedActivationServiceServer struct{}
 
 func (UnimplementedActivationServiceServer) CreateActivation(context.Context, *ActivationRequest) (*ActivationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateActivation not implemented")
+}
+func (UnimplementedActivationServiceServer) ActivateUser(context.Context, *ActivateRequest) (*ActivateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ActivateUser not implemented")
 }
 func (UnimplementedActivationServiceServer) mustEmbedUnimplementedActivationServiceServer() {}
 func (UnimplementedActivationServiceServer) testEmbeddedByValue()                           {}
@@ -104,6 +120,24 @@ func _ActivationService_CreateActivation_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ActivationService_ActivateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActivateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ActivationServiceServer).ActivateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ActivationService_ActivateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ActivationServiceServer).ActivateUser(ctx, req.(*ActivateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ActivationService_ServiceDesc is the grpc.ServiceDesc for ActivationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var ActivationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateActivation",
 			Handler:    _ActivationService_CreateActivation_Handler,
+		},
+		{
+			MethodName: "ActivateUser",
+			Handler:    _ActivationService_ActivateUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

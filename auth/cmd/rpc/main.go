@@ -8,6 +8,7 @@ import (
 	"github.com/ziliscite/micro-auth/auth/pkg/db"
 	pb "github.com/ziliscite/micro-auth/auth/pkg/protobuf"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"net"
 	"os"
@@ -30,7 +31,15 @@ func main() {
 	userRepository := repository.NewUserRepository(pool)
 	userService := service.NewUserService(userRepository)
 
-	auth := NewService(userService, cfg.jwtSecrets)
+	// target is dockerized service
+	tokenClient, err := grpc.NewClient("token:80", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		slog.Error("Failed to connect to token service client", "error", err)
+		os.Exit(1)
+	}
+	defer tokenClient.Close()
+
+	auth := NewService(userService, pb.NewActivationServiceClient(tokenClient), cfg.jwtSecrets)
 
 	listen, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", cfg.port))
 	if err != nil {

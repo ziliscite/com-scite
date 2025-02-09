@@ -1,10 +1,16 @@
-### Rough Architecture
-|Gateway| -> rate limit & single point of entry for the client
-|Auth| -> authentication service to store user and authenticate through basic auth
-|Token| -> to activate user once they are registered
-|Mailer| -> will be called through rabbitmq asynchronously once user has registered (sending activation token) or activated their account
+### Learning
+I'm creating this so that I don't get caught up in tutorial hell. 
 
-- Register
+It's a simple system, but I plan on either reusing it for other projects or expand upon it. 
+Both, of course, after I deepened my understanding regarding distributed computing and microservices, especially in the context of the cloud (everything is in it nowadays).
+
+### Rough Architecture
+|Gateway| -> rate limit & single point of entry for the client  
+|Auth| -> authentication service to store user and authenticate through basic auth  
+|Token| -> to activate user once they are registered  
+|Mailer| -> will be called through rabbitmq asynchronously once user has registered (sending activation token) or activated their account  
+
+- Register  
      create user   create    send token
 |Gateway| <-> |Auth| -> |Token| --> |Mailer|
         respond
@@ -13,21 +19,21 @@
 
 Second design 
 
-- Register
-     create user  create token
-|Gateway| <-> |Auth| <-> |Token|
-        respond | send token back to auth
-                --> |Mailer|
-        send token + user identity to mailer
+- Register  
+     create user  create token  
+|Gateway| <-> |Auth| <-> |Token|  
+        respond | send token back to auth  
+                --> |Mailer|  
+        send token + user identity to mailer  
 
 ---
 
-- Login
+- Login  
     get and authenticate
 |Gateway| <-> |Auth|
       return jwt
 
-- Activate
+- Activate  
     validate token  activate user
 |Gateway| <-> |Token| <-> |Auth|
           resp   |   resp with user    

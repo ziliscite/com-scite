@@ -9,18 +9,21 @@ import (
 	"github.com/ziliscite/micro-auth/auth/pkg/token"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log/slog"
 	"time"
 )
 
 type Service struct {
 	pb.UnimplementedAuthServiceServer
 	us      service.UserService
+	acs     pb.ActivationServiceClient
 	secrets string
 }
 
-func NewService(us service.UserService, secrets string) *Service {
+func NewService(us service.UserService, acs pb.ActivationServiceClient, secrets string) *Service {
 	return &Service{
 		us:      us,
+		acs:     acs,
 		secrets: secrets,
 	}
 }
@@ -43,7 +46,7 @@ func (s Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 		case errors.Is(err, repository.ErrEditConflict):
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		default:
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, "Unknown error occurred")
 		}
 	}
 
@@ -52,6 +55,18 @@ func (s Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	// in token service, asynchronously calls for the mailer service
 	// to send the email notification with token and user information
 	//
+	var activationStatus string
+	res, err := s.acs.CreateActivation(ctx, &pb.ActivationRequest{
+		UserId:   user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+	})
+	if err != nil {
+		slog.Error("activation token creation failed", "error", err)
+		activationStatus = "user created, but activation token has not. Please request activation separately"
+	} else {
+		activationStatus = res.Status
+	}
 
 	return &pb.RegisterResponse{
 		Response: &pb.User{
@@ -59,6 +74,7 @@ func (s Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 			Username: user.Username,
 			Email:    user.Email,
 		},
+		Status: activationStatus,
 	}, nil
 }
 

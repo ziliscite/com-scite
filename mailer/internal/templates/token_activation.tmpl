@@ -9,7 +9,7 @@ Please send a `PUT /v1/users/activated` request with the following JSON body to 
 
 {"token": "{{.activationToken}}"}
 
-Please note that this is a one-time use token and it will expire in 3 days.
+Please note that this is a one-time use token and it will expire at {{.expiresAt}}.
 
 Thanks,
 
@@ -31,7 +31,7 @@ Best Regards
                 {"token": "{{.activationToken}}"}
             </code>
         </pre>
-        <p>Please note that this is a one-time use token and it will expire in 3 days.</p>
+        <p>Please note that this is a one-time use token and it will expire at {{.expiresAt}}.</p>
         <p>Thanks,</p>
         <p>Best Regards</p>
     </body>

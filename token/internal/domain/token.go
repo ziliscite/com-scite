@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-const (
-	ScopeActivation = "activation"
-)
-
 type Token struct {
 	Plaintext string
 	Hash      []byte
@@ -53,4 +49,9 @@ func ValidateTokenPlaintext(tokenPlaintext string) error {
 		return errors.New("must be 26 bytes long")
 	}
 	return nil
+}
+
+func GetTokenHash(tokenPlaintext string) []byte {
+	hash := sha256.Sum256([]byte(tokenPlaintext))
+	return hash[:]
 }
