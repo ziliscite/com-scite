@@ -19,17 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ActivationService_CreateActivation_FullMethodName = "/activation.ActivationService/CreateActivation"
-	ActivationService_ActivateUser_FullMethodName     = "/activation.ActivationService/ActivateUser"
+	ActivationService_ActivateUser_FullMethodName = "/activation.ActivationService/ActivateUser"
 )
 
 // ActivationServiceClient is the client API for ActivationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ActivationServiceClient interface {
-	// For auth service
-	CreateActivation(ctx context.Context, in *ActivationRequest, opts ...grpc.CallOption) (*ActivationResponse, error)
-	// For gateway
 	ActivateUser(ctx context.Context, in *ActivateRequest, opts ...grpc.CallOption) (*ActivateResponse, error)
 }
 
@@ -39,16 +35,6 @@ type activationServiceClient struct {
 
 func NewActivationServiceClient(cc grpc.ClientConnInterface) ActivationServiceClient {
 	return &activationServiceClient{cc}
-}
-
-func (c *activationServiceClient) CreateActivation(ctx context.Context, in *ActivationRequest, opts ...grpc.CallOption) (*ActivationResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ActivationResponse)
-	err := c.cc.Invoke(ctx, ActivationService_CreateActivation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *activationServiceClient) ActivateUser(ctx context.Context, in *ActivateRequest, opts ...grpc.CallOption) (*ActivateResponse, error) {
@@ -65,9 +51,6 @@ func (c *activationServiceClient) ActivateUser(ctx context.Context, in *Activate
 // All implementations must embed UnimplementedActivationServiceServer
 // for forward compatibility.
 type ActivationServiceServer interface {
-	// For auth service
-	CreateActivation(context.Context, *ActivationRequest) (*ActivationResponse, error)
-	// For gateway
 	ActivateUser(context.Context, *ActivateRequest) (*ActivateResponse, error)
 	mustEmbedUnimplementedActivationServiceServer()
 }
@@ -79,9 +62,6 @@ type ActivationServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedActivationServiceServer struct{}
 
-func (UnimplementedActivationServiceServer) CreateActivation(context.Context, *ActivationRequest) (*ActivationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateActivation not implemented")
-}
 func (UnimplementedActivationServiceServer) ActivateUser(context.Context, *ActivateRequest) (*ActivateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ActivateUser not implemented")
 }
@@ -104,24 +84,6 @@ func RegisterActivationServiceServer(s grpc.ServiceRegistrar, srv ActivationServ
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&ActivationService_ServiceDesc, srv)
-}
-
-func _ActivationService_CreateActivation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ActivationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ActivationServiceServer).CreateActivation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ActivationService_CreateActivation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ActivationServiceServer).CreateActivation(ctx, req.(*ActivationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _ActivationService_ActivateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -149,10 +111,6 @@ var ActivationService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "activation.ActivationService",
 	HandlerType: (*ActivationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CreateActivation",
-			Handler:    _ActivationService_CreateActivation_Handler,
-		},
 		{
 			MethodName: "ActivateUser",
 			Handler:    _ActivationService_ActivateUser_Handler,

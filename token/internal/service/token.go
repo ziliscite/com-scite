@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/ziliscite/micro-auth/token/internal/domain"
 	"github.com/ziliscite/micro-auth/token/internal/repository"
 	"time"
@@ -14,6 +15,7 @@ var (
 
 type TokenService interface {
 	New(ctx context.Context, userID int64, ttl time.Duration) (*domain.Token, error)
+	Activate(ctx context.Context, tokenString string) (int64, error)
 }
 
 type tokenService struct {
@@ -48,5 +50,14 @@ func (t tokenService) Activate(ctx context.Context, tokenString string) (int64, 
 
 	tokenHash := domain.GetTokenHash(tokenString)
 
-	return t.tr.GetUserId(ctx, tokenHash)
+	userId, expAt, err := t.tr.GetUserId(ctx, tokenHash)
+	if err != nil {
+		return 0, err
+	}
+
+	if expAt.Before(time.Now()) {
+		return 0, fmt.Errorf("%w: token has expired", ErrInvalidToken)
+	}
+
+	return userId, nil
 }

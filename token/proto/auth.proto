@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/ziliscite/micro-auth/pkg/protobuf";
+
+// To be used as a client for this service
+service AuthService {
+  rpc ActivateUser(ActivateUserRequest) returns (ActivateUserResponse);
+}
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+message ActivateUserRequest {
+  int64 user_id = 1;
+}
+
+message ActivateUserResponse {
+  User response = 1;
+  bool activated = 2;
+}

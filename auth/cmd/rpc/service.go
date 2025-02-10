@@ -88,6 +88,7 @@ func (s Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 
 	user, err := s.us.SignIn(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
+		slog.Error("SignIn failed", "error", err.Error())
 		switch {
 		case errors.Is(err, context.DeadlineExceeded):
 			return nil, status.Error(codes.DeadlineExceeded, err.Error())
@@ -110,5 +111,36 @@ func (s Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 			Token:      accessToken,
 			Expiration: exp.Unix(),
 		},
+	}, nil
+}
+
+func (s Service) ActivateUser(ctx context.Context, req *pb.ActivateUserRequest) (*pb.ActivateUserResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 6*time.Second)
+	defer cancel()
+
+	// Update user
+	user, err := s.us.Activate(ctx, req.GetUserId())
+	if err != nil {
+		slog.Error("Activate user failed", "error", err.Error())
+		switch {
+		case errors.Is(err, context.DeadlineExceeded):
+			return nil, status.Error(codes.DeadlineExceeded, err.Error())
+		case errors.Is(err, context.Canceled):
+			return nil, status.Error(codes.Canceled, err.Error())
+		case errors.Is(err, repository.ErrEditConflict):
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	// return data to token service
+	return &pb.ActivateUserResponse{
+		Response: &pb.User{
+			Id:       user.ID,
+			Username: user.Username,
+			Email:    user.Email,
+		},
+		Activated: user.Activated,
 	}, nil
 }
