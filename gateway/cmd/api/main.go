@@ -42,6 +42,15 @@ func main() {
 
 	authServ := pb.NewAuthServiceClient(authClient)
 
+	tokenClient, err := grpc.NewClient("token:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		slog.Error("Failed to connect to token service client", "error", err)
+		os.Exit(1)
+	}
+	defer tokenClient.Close()
+
+	tokenSrv := pb.NewActivationServiceClient(tokenClient)
+
 	r.Post("/v0/register", func(w http.ResponseWriter, r *http.Request) {
 		// Example handler for a gRPC endpoint
 		var requestBody struct {
@@ -60,6 +69,33 @@ func main() {
 			Username: requestBody.Username,
 			Email:    requestBody.Email,
 			Password: requestBody.Password,
+		})
+		if err != nil {
+			sendError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		err = writeJSON(w, http.StatusOK, resp)
+		if err != nil {
+			sendError(w, http.StatusInternalServerError, err)
+			return
+		}
+	})
+
+	r.Post("/v0/activate", func(w http.ResponseWriter, r *http.Request) {
+		// Example handler for a gRPC endpoint
+		var requestBody struct {
+			TokenString string `json:"token_string"`
+		}
+
+		err := readBody(w, r, &requestBody)
+		if err != nil {
+			sendError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		resp, err := tokenSrv.ActivateUser(r.Context(), &pb.ActivateRequest{
+			TokenString: requestBody.TokenString,
 		})
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, err)

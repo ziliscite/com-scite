@@ -42,7 +42,7 @@ func GenerateToken(userID int64, ttl time.Duration) (*Token, error) {
 }
 
 func ValidateTokenPlaintext(tokenPlaintext string) error {
-	if tokenPlaintext != "" {
+	if tokenPlaintext == "" {
 		return errors.New("must be provided")
 	}
 	if len(tokenPlaintext) != 26 {

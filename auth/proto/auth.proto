@@ -5,8 +5,12 @@ package auth;
 option go_package = "github.com/ziliscite/micro-auth/pkg/protobuf";
 
 service AuthService {
+  // For gateway to consume
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Method for token service to consume
+  rpc ActivateUser(ActivateUserRequest) returns (ActivateUserResponse);
 }
 
 message User {
@@ -39,4 +43,14 @@ message LoginRequest {
 
 message LoginResponse {
   Token response = 1;
+}
+
+message ActivateUserRequest {
+  int64 user_id = 1;
+}
+
+// Return to token service
+message ActivateUserResponse {
+  User response = 1;
+  bool activated = 2;
 }

@@ -37,6 +37,8 @@ func (s *service) listen() error {
 				slog.Error(err.Error())
 			}
 
+			// Need to be able to send a congrats email and token email
+			// How do I do it? declare more queue?
 			go s.sendActivationEmail(mail)
 		}
 	}()

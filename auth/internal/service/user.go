@@ -19,6 +19,7 @@ var (
 type UserService interface {
 	SignIn(ctx context.Context, email, password string) (*domain.User, error)
 	SignUp(ctx context.Context, username, email, password string) (*domain.User, error)
+	Activate(ctx context.Context, id int64) (*domain.User, error)
 }
 
 type userServ struct {
@@ -75,11 +76,11 @@ func (u userServ) SignUp(ctx context.Context, username, email, password string) 
 	return user, nil
 }
 
-// After activate, send congrats email
-
+// Activate takes user id, update user activation status to true, and return the mutated user
 func (u userServ) Activate(ctx context.Context, id int64) (*domain.User, error) {
 	user, err := u.ur.GetById(ctx, id)
 	if err != nil {
+		slog.Error("get user failed", "errors", err, "id", id)
 		return nil, err
 	}
 
@@ -87,6 +88,7 @@ func (u userServ) Activate(ctx context.Context, id int64) (*domain.User, error) 
 
 	err = u.ur.Update(ctx, user)
 	if err != nil {
+		slog.Error("update failed", "errors", err, "id", id)
 		return nil, err
 	}
 

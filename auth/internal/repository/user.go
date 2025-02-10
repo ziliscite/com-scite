@@ -89,7 +89,7 @@ func (u userRepo) Insert(ctx context.Context, user *domain.User) error {
 
 func (u userRepo) GetById(ctx context.Context, id int64) (*domain.User, error) {
 	query := `
-        SELECT id, username, email, password_hash, activated, created_at
+        SELECT id, username, email, password_hash, activated, created_at, updated_at, version
         FROM users
         WHERE id = $1;
 	`
@@ -100,6 +100,7 @@ func (u userRepo) GetById(ctx context.Context, id int64) (*domain.User, error) {
 	if err := u.db.QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.Username, &user.Email,
 		&hash, &user.Activated, &user.CreatedAt,
+		&user.UpdatedAt, &user.Version,
 	); err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
