@@ -36,6 +36,8 @@ func (s Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 
 	user, err := s.us.SignUp(ctx, req.GetUsername(), req.GetEmail(), req.GetPassword())
 	if err != nil {
+		slog.Error("SignUp failed", "error", err.Error())
+
 		switch {
 		case errors.Is(err, context.DeadlineExceeded):
 			return nil, status.Error(codes.DeadlineExceeded, err.Error())

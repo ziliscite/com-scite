@@ -37,11 +37,11 @@ func (u *User) Hash() []byte {
 }
 
 func (u *User) Validate(v *validator.Validator) {
-	if u == nil {
+	if u.Username == "" {
 		v.AddError("username", "must be provided")
 	}
 
-	if len(u.Username) <= 500 {
+	if len(u.Username) >= 500 {
 		v.AddError("username", "must not be more than 500 characters")
 	}
 

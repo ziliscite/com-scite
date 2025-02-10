@@ -30,10 +30,10 @@ func NewTokenRepository(db *pgxpool.Pool) TokenRepository {
 // Insert adds the data for a specific token to the tokens table.
 func (t tokenRepository) Insert(ctx context.Context, token *domain.Token) error {
 	query := `
-        INSERT INTO tokens (hash, user_id, expiry) VALUES ($1, $2, $3);
+        INSERT INTO tokens (user_id, token_hash, expired_at) VALUES ($1, $2, $3);
 	`
 
-	args := []any{token.Hash, token.UserID, token.Expiry}
+	args := []any{token.UserID, token.Hash, token.Expiry}
 
 	_, err := t.db.Exec(ctx, query, args...)
 	return err

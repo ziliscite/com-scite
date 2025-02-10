@@ -31,7 +31,7 @@ func main() {
 	userRepository := repository.NewUserRepository(pool)
 	userService := service.NewUserService(userRepository)
 
-	// target is dockerized service
+	// target is a dockerized service
 	tokenClient, err := grpc.NewClient("token:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		slog.Error("Failed to connect to token service client", "error", err)

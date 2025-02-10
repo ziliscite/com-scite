@@ -8,6 +8,7 @@ import (
 	pb "github.com/ziliscite/micro-auth/token/pkg/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log/slog"
 	"time"
 )
 
@@ -25,8 +26,9 @@ func (s Service) CreateActivation(ctx context.Context, req *pb.ActivationRequest
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	token, err := s.ts.New(ctx, req.GetUserId(), 24*time.Hour)
+	token, err := s.ts.New(ctx, req.GetUserId(), time.Duration(24)*time.Hour)
 	if err != nil {
+		slog.Error("CreateActivation failed", "error", err.Error())
 		switch {
 		case errors.Is(err, context.DeadlineExceeded):
 			return nil, status.Error(codes.DeadlineExceeded, err.Error())
@@ -36,12 +38,13 @@ func (s Service) CreateActivation(ctx context.Context, req *pb.ActivationRequest
 	}
 
 	if err = s.pub.SendMail(domain.Mail{
-		ID:        req.GetUserId(),
+		ID:        token.UserID,
 		Username:  req.GetUsername(),
 		Email:     req.GetEmail(),
 		Token:     token.Plaintext,
 		ExpiresAt: token.Expiry,
 	}); err != nil {
+		slog.Error("CreateActivation failed", "error", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

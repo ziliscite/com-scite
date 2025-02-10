@@ -7,6 +7,7 @@ import (
 	"github.com/ziliscite/micro-auth/auth/internal/domain"
 	"github.com/ziliscite/micro-auth/auth/internal/repository"
 	"github.com/ziliscite/micro-auth/auth/pkg/validator"
+	"log/slog"
 )
 
 var (
@@ -62,6 +63,7 @@ func (u userServ) SignUp(ctx context.Context, username, email, password string) 
 
 	user.Validate(v)
 	if !v.Valid() {
+		slog.Error("validation failed", "errors", v.Errors(), slog.String("username", username), slog.String("email", email))
 		return nil, ErrInvalidUser
 	}
 
