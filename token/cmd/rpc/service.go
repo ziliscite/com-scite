@@ -87,12 +87,9 @@ func (s Service) ActivateUser(ctx context.Context, req *pb.ActivateRequest) (*pb
 	user := resp.GetResponse()
 
 	// send congrats mail
-	if err = s.pub.SendMail(domain.Mail{
-		ID:        -1,
-		Username:  user.GetUsername(),
-		Email:     user.GetEmail(),
-		Token:     "To simulate congrats email",
-		ExpiresAt: time.Now(),
+	if err = s.pub.SendCongratsMail(domain.Mail{
+		Username: user.GetUsername(),
+		Email:    user.GetEmail(),
 	}); err != nil {
 		slog.Error("Send welcome email failed", "error", err.Error())
 		// not return, aint that important anyway

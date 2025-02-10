@@ -8,11 +8,13 @@ import (
 
 type MailPublisher interface {
 	SendMail(mail domain.Mail) error
+	SendCongratsMail(mail domain.Mail) error
 }
 
 type publisher struct {
-	amc   *amqp.Connection
-	queue amqp.Queue
+	amc           *amqp.Connection
+	tokenQueue    amqp.Queue
+	congratsQueue amqp.Queue
 }
 
 func NewPublisher(amc *amqp.Connection) (MailPublisher, error) {
@@ -36,9 +38,22 @@ func NewPublisher(amc *amqp.Connection) (MailPublisher, error) {
 		return nil, err
 	}
 
+	q2, err := ch.QueueDeclare(
+		"send_congrats_mail",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &publisher{
-		amc:   amc,
-		queue: q,
+		amc:           amc,
+		tokenQueue:    q,
+		congratsQueue: q2,
 	}, nil
 }
 
@@ -56,7 +71,31 @@ func (p *publisher) SendMail(mail domain.Mail) error {
 
 	return ch.Publish(
 		"",
-		p.queue.Name,
+		p.tokenQueue.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+}
+
+func (p *publisher) SendCongratsMail(mail domain.Mail) error {
+	ch, err := p.amc.Channel()
+	if err != nil {
+		return err
+	}
+	defer ch.Close()
+
+	body, err := json.Marshal(mail)
+	if err != nil {
+		return err
+	}
+
+	return ch.Publish(
+		"",
+		p.congratsQueue.Name,
 		false,
 		false,
 		amqp.Publishing{

@@ -13,8 +13,21 @@ func (s *service) listen() error {
 	}
 	defer ch.Close()
 
-	msgs, err := ch.Consume(
-		s.queue.Name,
+	mails, err := ch.Consume(
+		s.mq.Name,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	congratsMails, err := ch.Consume(
+		s.mcq.Name,
 		"",
 		true,
 		false,
@@ -29,7 +42,7 @@ func (s *service) listen() error {
 	// consume til application exits
 	forever := make(chan bool)
 	go func() {
-		for m := range msgs {
+		for m := range mails {
 			var mail domain.Mail
 
 			err = json.Unmarshal(m.Body, &mail)
@@ -37,9 +50,20 @@ func (s *service) listen() error {
 				slog.Error(err.Error())
 			}
 
-			// Need to be able to send a congrats email and token email
-			// How do I do it? declare more queue?
 			go s.sendActivationEmail(mail)
+		}
+	}()
+
+	go func() {
+		for m := range congratsMails {
+			var mail domain.Mail
+
+			err = json.Unmarshal(m.Body, &mail)
+			if err != nil {
+				slog.Error(err.Error())
+			}
+
+			go s.sendCongratulationsEmail(mail)
 		}
 	}()
 
