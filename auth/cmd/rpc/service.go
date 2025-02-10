@@ -32,6 +32,8 @@ func (s Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
+	defer slog.Info("Register finished", "req", req)
+
 	user, err := s.us.SignUp(ctx, req.GetUsername(), req.GetEmail(), req.GetPassword())
 	if err != nil {
 		switch {

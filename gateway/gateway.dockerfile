@@ -8,9 +8,9 @@ WORKDIR /app
 COPY . /app
 
 # Build the binary and add environment variable through CGO_ENABLED
-RUN CGO_ENABLED=0 go build -o auth ./cmd/rpc
+RUN CGO_ENABLED=0 go build -o gateway ./cmd/api
 
-RUN chmod +x /app/auth
+RUN chmod +x /app/gateway
 
 # Build a small image
 FROM alpine:latest
@@ -19,13 +19,9 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy the pre-built binary file from the previous stage
-COPY --from=builder app/auth ./
+COPY --from=builder app/gateway ./
 
-# Copy migrations files
-COPY migrations ./migrations
-
-# Expose gRPC port
-EXPOSE 50051
+EXPOSE 80
 
 # Command to run the executable
-CMD ["./auth"]
+CMD ["./gateway"]

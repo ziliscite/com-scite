@@ -24,5 +24,8 @@ COPY --from=builder app/token ./
 # Copy migrations files
 COPY migrations ./migrations
 
+# Expose gRPC port
+EXPOSE 50051
+
 # Command to run the executable
 CMD ["./token"]

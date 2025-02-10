@@ -26,7 +26,7 @@ func getConfig() Config {
 	once.Do(func() {
 		instance = Config{}
 
-		flag.IntVar(&instance.port, "port", 80, "API server port")
+		flag.IntVar(&instance.port, "port", 50051, "gRPC server port")
 
 		flag.StringVar(&instance.jwtSecrets, "secrets", os.Getenv("JWT_SECRETS"), "256 bytes of secrets")
 
