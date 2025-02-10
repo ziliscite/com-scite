@@ -8,9 +8,9 @@ WORKDIR /app
 COPY . /app
 
 # Build the binary and add environment variable through CGO_ENABLED
-RUN CGO_ENABLED=0 go build -o token ./cmd/rpc
+RUN CGO_ENABLED=0 go build -o activation ./cmd/rpc
 
-RUN chmod +x /app/token
+RUN chmod +x /app/activation
 
 # Build a small image
 FROM alpine:latest
@@ -19,7 +19,7 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy the pre-built binary file from the previous stage
-COPY --from=builder app/token ./
+COPY --from=builder app/activation ./
 
 # Copy migrations files
 COPY migrations ./migrations
@@ -28,4 +28,4 @@ COPY migrations ./migrations
 EXPOSE 50051
 
 # Command to run the executable
-CMD ["./token"]
+CMD ["./activation"]

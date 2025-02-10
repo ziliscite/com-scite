@@ -42,14 +42,14 @@ func main() {
 
 	authServ := pb.NewAuthServiceClient(authClient)
 
-	tokenClient, err := grpc.NewClient("token:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	activationClient, err := grpc.NewClient("activation:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		slog.Error("Failed to connect to token service client", "error", err)
+		slog.Error("Failed to connect to activation service client", "error", err)
 		os.Exit(1)
 	}
-	defer tokenClient.Close()
+	defer activationClient.Close()
 
-	tokenSrv := pb.NewActivationServiceClient(tokenClient)
+	activationSrv := pb.NewActivationServiceClient(activationClient)
 
 	r.Post("/v0/register", func(w http.ResponseWriter, r *http.Request) {
 		// Example handler for a gRPC endpoint
@@ -94,7 +94,7 @@ func main() {
 			return
 		}
 
-		resp, err := tokenSrv.ActivateUser(r.Context(), &pb.ActivateRequest{
+		resp, err := activationSrv.ActivateUser(r.Context(), &pb.ActivateRequest{
 			TokenString: requestBody.TokenString,
 		})
 		if err != nil {

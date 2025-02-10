@@ -97,10 +97,10 @@ services:
     networks:
       - micro-network
 
-  token:
+  activation:
     build:
-      context: ./token
-      dockerfile: ./token.dockerfile
+      context: ./activation
+      dockerfile: ./activation.dockerfile
     restart: always
     ports:
       - "50052:50051"

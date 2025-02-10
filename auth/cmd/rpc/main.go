@@ -32,14 +32,14 @@ func main() {
 	userService := service.NewUserService(userRepository)
 
 	// target is a dockerized service
-	tokenClient, err := grpc.NewClient("token:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	activationClient, err := grpc.NewClient("activation:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		slog.Error("Failed to connect to token service client", "error", err)
+		slog.Error("Failed to connect to activation service client", "error", err)
 		os.Exit(1)
 	}
-	defer tokenClient.Close()
+	defer activationClient.Close()
 
-	auth := NewService(userService, pb.NewActivationServiceClient(tokenClient), cfg.jwtSecrets)
+	auth := NewService(userService, pb.NewActivationServiceClient(activationClient), cfg.jwtSecrets)
 
 	listen, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", cfg.port))
 	if err != nil {
