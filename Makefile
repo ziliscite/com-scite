@@ -16,3 +16,9 @@ down:
 	docker-compose down
 	@echo Docker images removed!
 
+## migrate/new service=$1 name=$2: create a new database migration
+.PHONY: migrate/new
+migrate/new:
+	@echo 'Creating migration files for ${name}...'
+	migrate create -seq -ext .sql -dir ./${service}/migrations ${name}
+
