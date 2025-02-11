@@ -71,7 +71,7 @@ func main() {
 			Password: requestBody.Password,
 		})
 		if err != nil {
-			sendError(w, http.StatusInternalServerError, err)
+			sendGRPCError(w, err)
 			return
 		}
 
@@ -98,7 +98,36 @@ func main() {
 			TokenString: requestBody.TokenString,
 		})
 		if err != nil {
+			sendGRPCError(w, err)
+			return
+		}
+
+		err = writeJSON(w, http.StatusOK, resp)
+		if err != nil {
 			sendError(w, http.StatusInternalServerError, err)
+			return
+		}
+	})
+
+	r.Post("/v0/login", func(w http.ResponseWriter, r *http.Request) {
+		// Example handler for a gRPC endpoint
+		var requestBody struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+
+		err := readBody(w, r, &requestBody)
+		if err != nil {
+			sendError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		resp, err := authServ.Login(r.Context(), &pb.LoginRequest{
+			Email:    requestBody.Email,
+			Password: requestBody.Password,
+		})
+		if err != nil {
+			sendGRPCError(w, err)
 			return
 		}
 

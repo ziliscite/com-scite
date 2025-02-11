@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"net/http"
 	"strings"
@@ -43,6 +45,43 @@ func sendError(w http.ResponseWriter, code int, e error) {
 		"error": e.Error(),
 	}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func sendGRPCError(w http.ResponseWriter, e error) {
+	if st, ok := status.FromError(e); ok {
+		switch st.Code() {
+		case codes.DeadlineExceeded:
+			sendError(w, http.StatusGatewayTimeout, errors.New("request timed out. Please try again later"))
+		case codes.Canceled:
+			sendError(w, http.StatusBadRequest, errors.New("request was canceled by the client"))
+		case codes.Unauthenticated:
+			sendError(w, http.StatusUnauthorized, errors.New("authentication failed. Please check your credentials"))
+		case codes.PermissionDenied:
+			sendError(w, http.StatusForbidden, errors.New("you do not have permission to access this resource"))
+		case codes.InvalidArgument:
+			sendError(w, http.StatusBadRequest, errors.New("invalid input provided. Please check your request"))
+		case codes.NotFound:
+			sendError(w, http.StatusNotFound, errors.New("resource not found"))
+		case codes.AlreadyExists:
+			sendError(w, http.StatusConflict, errors.New("resource already exists. Please check your request"))
+		case codes.FailedPrecondition:
+			sendError(w, http.StatusPreconditionFailed, errors.New("precondition failed. Check the request constraints"))
+		case codes.Aborted:
+			sendError(w, http.StatusConflict, errors.New("request was aborted. Please try again later"))
+		case codes.OutOfRange:
+			sendError(w, http.StatusRequestedRangeNotSatisfiable, errors.New("the requested range is out of bounds"))
+		case codes.Internal:
+			sendError(w, http.StatusInternalServerError, errors.New("an internal server error occurred. Please try again later"))
+		case codes.Unavailable:
+			sendError(w, http.StatusServiceUnavailable, errors.New("service unavailable. Please try again later"))
+		case codes.DataLoss:
+			sendError(w, http.StatusInternalServerError, errors.New("data loss detected. Please contact support"))
+		default:
+			sendError(w, http.StatusInternalServerError, errors.New("an unknown error occurred. Please try again later"))
+		}
+	} else {
+		sendError(w, http.StatusInternalServerError, e)
 	}
 }
 
