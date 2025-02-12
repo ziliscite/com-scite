@@ -41,6 +41,48 @@ services:
     networks:
       - micro-network
 
+  comic_db:
+    image: postgres
+    ports:
+      - "5435:5432"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_COMIC_DB}
+    volumes:
+      - ./.volume/db-data/user_db/:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_COMIC_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - micro-network
+
+  chapter_db:
+    image: postgres
+    ports:
+      - "5436:5432"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_CHAPTER_DB}
+    volumes:
+      - ./.volume/db-data/token_db/:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_CHAPTER_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - micro-network
+
   mailhog:
     image: "mailhog/mailhog:latest"
     ports:

@@ -41,7 +41,6 @@ I'll probably not gonna deploy it whatsoever, perhaps later, after I figure out 
 -> |Chapter Page Table| (one-to-many) -> A chapter consists of multiple pages
 
 ## Sketch
-
 Since chapter didn't hold reference to comic, to maintain integrity...
 
 Event-Driven:  
