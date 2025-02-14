@@ -53,7 +53,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_COMIC_DB}
     volumes:
-      - ./.volume/db-data/user_db/:/var/lib/postgresql/data/
+      - ./.volume/db-data/comic_db/:/var/lib/postgresql/data/
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_COMIC_DB}"]
       interval: 5s
@@ -74,7 +74,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_CHAPTER_DB}
     volumes:
-      - ./.volume/db-data/token_db/:/var/lib/postgresql/data/
+      - ./.volume/db-data/chapter_db/:/var/lib/postgresql/data/
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_CHAPTER_DB}"]
       interval: 5s
@@ -189,6 +189,24 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+    networks:
+      - micro-network
+
+  comic:
+    build:
+      context: ./comic
+      dockerfile: ./comic.dockerfile
+    restart: always
+    ports:
+      - "50053:50051"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DB_DSN: ${COMIC_DSN}
+    depends_on:
+      comic_db:
+        condition: service_healthy
     networks:
       - micro-network
 

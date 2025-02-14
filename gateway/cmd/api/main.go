@@ -138,10 +138,7 @@ func main() {
 		}
 	})
 
-	server := &http.Server{
-		Addr:    ":80",
-		Handler: r,
-	}
+	server := &http.Server{Addr: ":80", Handler: r}
 
 	// Graceful shutdown setup
 	done := make(chan os.Signal, 1)

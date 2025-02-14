@@ -22,3 +22,9 @@ migrate/new:
 	@echo 'Creating migration files for ${name}...'
 	migrate create -seq -ext .sql -dir ./${service}/migrations ${name}
 
+## migrate/new service=$1: start just 1 service from docker compose
+.PHONY: compose
+compose:
+	@echo Starting ${service} images...
+	docker-compose up ${service} -d
+	@echo ${service} images started!

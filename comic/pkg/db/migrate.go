@@ -17,6 +17,11 @@ func AutoMigrate(dsn string) {
 		os.Exit(1)
 	}
 
+	//if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	//	slog.Error("Error running migrations", "error", err.Error())
+	//	os.Exit(1)
+	//}
+
 	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		slog.Error("Error running migrations", "error", err.Error())
 		os.Exit(1)
