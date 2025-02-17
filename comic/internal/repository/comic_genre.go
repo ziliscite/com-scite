@@ -25,7 +25,7 @@ func NewComicGenreRepository(db *pgxpool.Pool) ComicGenreRepository {
 
 func (c *comicGenreRepository) MassUpsert(ctx context.Context, comicId int64, genresId []int64) error {
 	query := `
-		INSERT INTO comicgenre (comic_id, genre_id) VALUES ($1, $2);
+		INSERT INTO comic_genre(comic_id, genre_id) VALUES ($1, $2);
 	`
 
 	batch := &pgx.Batch{}
@@ -48,7 +48,7 @@ func (c *comicGenreRepository) MassUpsert(ctx context.Context, comicId int64, ge
 
 func (c *comicGenreRepository) Add(ctx context.Context, comicId int64, genreId int64) error {
 	query := `
-		INSERT INTO comicgenre (comic_id, genre_id) VALUES ($1, $2);
+		INSERT INTO comic_genre(comic_id, genre_id) VALUES ($1, $2);
 	`
 
 	_, err := c.db.Exec(ctx, query, comicId, genreId)
@@ -67,7 +67,7 @@ func (c *comicGenreRepository) Add(ctx context.Context, comicId int64, genreId i
 
 func (c *comicGenreRepository) Remove(ctx context.Context, comicId int64, genreId int64) error {
 	query := `
-		DELETE FROM comicgenre WHERE comic_id = $1 AND genre_id = $2;
+		DELETE FROM comic_genre WHERE comic_id = $1 AND genre_id = $2;
 	`
 
 	cmd, err := c.db.Exec(ctx, query, comicId, genreId)

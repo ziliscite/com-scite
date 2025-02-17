@@ -13,6 +13,7 @@ import (
 type CoverRepository interface {
 	New(ctx context.Context, comicId int64, cover *domain.Cover) error
 	Deactivate(ctx context.Context, comicId int64) error
+
 	GetActive(ctx context.Context, comicId int64) (*domain.Cover, error)
 	GetAll(ctx context.Context, comicId int64) ([]domain.Cover, error)
 }

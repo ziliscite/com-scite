@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	pb "github.com/ziliscite/micro-auth/gateway/pkg/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -17,30 +14,12 @@ import (
 )
 
 func main() {
-	r := chi.NewRouter()
-
-	r.Use(middleware.Recoverer)
-	r.Use(RateLimit)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Heartbeat("/healthz"))
-
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
-
 	authClient, err := grpc.NewClient("auth:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		slog.Error("Failed to connect to token service client", "error", err)
 		os.Exit(1)
 	}
 	defer authClient.Close()
-
-	authServ := pb.NewAuthServiceClient(authClient)
 
 	activationClient, err := grpc.NewClient("activation:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -49,98 +28,25 @@ func main() {
 	}
 	defer activationClient.Close()
 
-	activationSrv := pb.NewActivationServiceClient(activationClient)
+	comicClient, err := grpc.NewClient("comic:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		slog.Error("Failed to connect to activation service client", "error", err)
+		os.Exit(1)
+	}
+	defer comicClient.Close()
 
-	r.Post("/v0/register", func(w http.ResponseWriter, r *http.Request) {
-		// Example handler for a gRPC endpoint
-		var requestBody struct {
-			Username string `json:"username"`
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
+	authServ := pb.NewAuthServiceClient(authClient)
+	activationServ := pb.NewActivationServiceClient(activationClient)
+	comicServ := pb.NewComicServiceClient(comicClient)
 
-		err := readBody(w, r, &requestBody)
-		if err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
+	app := &applications{
+		auc: authServ,
+		atc: activationServ,
+		cc:  comicServ,
+	}
 
-		resp, err := authServ.Register(r.Context(), &pb.RegisterRequest{
-			Username: requestBody.Username,
-			Email:    requestBody.Email,
-			Password: requestBody.Password,
-		})
-		if err != nil {
-			sendGRPCError(w, err)
-			return
-		}
+	server := &http.Server{Addr: ":80", Handler: app.routes()}
 
-		err = writeJSON(w, http.StatusOK, resp)
-		if err != nil {
-			sendError(w, http.StatusInternalServerError, err)
-			return
-		}
-	})
-
-	r.Post("/v0/activate", func(w http.ResponseWriter, r *http.Request) {
-		// Example handler for a gRPC endpoint
-		var requestBody struct {
-			TokenString string `json:"token_string"`
-		}
-
-		err := readBody(w, r, &requestBody)
-		if err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		resp, err := activationSrv.ActivateUser(r.Context(), &pb.ActivateRequest{
-			TokenString: requestBody.TokenString,
-		})
-		if err != nil {
-			sendGRPCError(w, err)
-			return
-		}
-
-		err = writeJSON(w, http.StatusOK, resp)
-		if err != nil {
-			sendError(w, http.StatusInternalServerError, err)
-			return
-		}
-	})
-
-	r.Post("/v0/login", func(w http.ResponseWriter, r *http.Request) {
-		// Example handler for a gRPC endpoint
-		var requestBody struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
-
-		err := readBody(w, r, &requestBody)
-		if err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		resp, err := authServ.Login(r.Context(), &pb.LoginRequest{
-			Email:    requestBody.Email,
-			Password: requestBody.Password,
-		})
-		if err != nil {
-			sendGRPCError(w, err)
-			return
-		}
-
-		err = writeJSON(w, http.StatusOK, resp)
-		if err != nil {
-			sendError(w, http.StatusInternalServerError, err)
-			return
-		}
-	})
-
-	server := &http.Server{Addr: ":80", Handler: r}
-
-	// Graceful shutdown setup
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
@@ -151,5 +57,9 @@ func main() {
 	}()
 
 	<-done
-	server.Shutdown(context.Background())
+
+	if err = server.Shutdown(context.Background()); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
 }

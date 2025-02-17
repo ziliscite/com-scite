@@ -12,8 +12,10 @@ import (
 
 type ComicRepository interface {
 	Create(ctx context.Context, comic *domain.Comic) error
+
 	Index(ctx context.Context) ([]domain.Comic, error)
 	Get(ctx context.Context, comicId int64) (*domain.Comic, error)
+
 	Update(ctx context.Context, comic *domain.Comic) error
 	Delete(ctx context.Context, comicId int64) error
 }
@@ -35,7 +37,7 @@ func (c *comicRepository) Create(ctx context.Context, comic *domain.Comic) error
 		RETURNING comic_id;
 	`
 
-	args := []interface{}{comic.Title, comic.Slug, comic.Description, comic.Author, comic.Artist, comic.Status.String(), comic.Type.String()}
+	args := []any{comic.Title, comic.Slug, comic.Description, comic.Author, comic.Artist, comic.Status.String(), comic.Type.String()}
 	if err := c.db.QueryRow(ctx, query, args...).Scan(&comic.ID); err != nil {
 		var pgErr *pgconn.PgError
 		switch {
@@ -60,9 +62,8 @@ func (c *comicRepository) Get(ctx context.Context, comicId int64) (*domain.Comic
 			c.comic_id, c.title, c.slug, c.description,
 			c.author, c.artist, c.status, c.type,
 			ARRAY_AGG(g.name ORDER BY g.name) AS genre,
-			cv.url, c.created_at, c.version
+			c.created_at, c.version
 		FROM comic c
-		JOIN cover cv ON c.comic_id = cv.comic_id 
 		JOIN comicgenre cg ON c.comic_id = cg.comic_id
 		JOIN genre g ON cg.genre_id = g.genre_id
 		WHERE c.comic_id = $1
@@ -98,7 +99,7 @@ func (c *comicRepository) Update(ctx context.Context, comic *domain.Comic) error
 		RETURNING version
 	`
 
-	args := []interface{}{
+	args := []any{
 		comic.Title, comic.Slug, comic.Description,
 		comic.Author, comic.Artist, comic.Status.String(),
 		comic.Type.String(), comic.ID, comic.Version,

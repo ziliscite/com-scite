@@ -12,7 +12,7 @@ import (
 
 type GenreRepository interface {
 	// MassUpsert will do batch get or insert genres
-	MassUpsert(ctx context.Context, genres []string) ([]domain.Genre, error)
+	MassUpsert(ctx context.Context, genres []*domain.Genre) error
 	New(ctx context.Context, genre *domain.Genre) error
 
 	GetAll(ctx context.Context) ([]domain.Genre, error)
@@ -25,11 +25,11 @@ type genreRepository struct {
 	db *pgxpool.Pool
 }
 
-func New(db *pgxpool.Pool) GenreRepository {
+func NewGenreRepository(db *pgxpool.Pool) GenreRepository {
 	return &genreRepository{db: db}
 }
 
-func (g *genreRepository) MassUpsert(ctx context.Context, genres []string) ([]domain.Genre, error) {
+func (g *genreRepository) MassUpsert(ctx context.Context, genres []*domain.Genre) error {
 	batch := &pgx.Batch{}
 	for _, gr := range genres {
 		batch.Queue(`
@@ -37,23 +37,19 @@ func (g *genreRepository) MassUpsert(ctx context.Context, genres []string) ([]do
 			VALUES ($1)
 			ON CONFLICT (name) DO UPDATE SET name=excluded.name
 			RETURNING name, genre_id
-		`, gr)
+		`, gr.Name)
 	}
 
 	br := g.db.SendBatch(ctx, batch)
 	defer br.Close()
 
-	genreList := make([]domain.Genre, 0)
-	for i := 0; i < len(genres); i++ {
-		var genre domain.Genre
-		if err := br.QueryRow().Scan(&genre.Name, &genre.ID); err != nil {
-			return nil, err
+	for _, gr := range genres {
+		if err := br.QueryRow().Scan(&gr.Name, &gr.ID); err != nil {
+			return err
 		}
-
-		genreList = append(genreList, genre)
 	}
 
-	return genreList, nil
+	return nil
 }
 
 func (g *genreRepository) New(ctx context.Context, genre *domain.Genre) error {

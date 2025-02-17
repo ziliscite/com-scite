@@ -18,7 +18,7 @@ const (
 )
 
 func (cs ComicStatus) String() string {
-	return [...]string{"Ongoing", "Completed", "Dropped", "Hiatus", "Coming Soon", "Season End"}[cs]
+	return [...]string{"Ongoing", "Completed", "Dropped", "Hiatus", "ComingSoon", "SeasonEnd"}[cs]
 }
 
 func NewComicStatus(status string) (ComicStatus, error) {
@@ -79,6 +79,22 @@ type Comic struct {
 }
 
 func NewComic(title, description, author, artist, comicStatus, comicType string) (*Comic, error) {
+	if title == "" {
+		return nil, fmt.Errorf("invalid title, cannot be empty")
+	}
+
+	if description == "" {
+		return nil, fmt.Errorf("invalid description, cannot be empty")
+	}
+
+	if author == "" {
+		return nil, fmt.Errorf("invalid author, cannot be empty")
+	}
+
+	if artist == "" {
+		return nil, fmt.Errorf("invalid artist, cannot be empty")
+	}
+
 	stats, err := NewComicStatus(comicStatus)
 	if err != nil {
 		return nil, err

@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// Maybe use this for each domain
+
 type Validator struct {
 	errs map[string]string
 	mu   sync.Mutex
