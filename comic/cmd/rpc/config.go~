@@ -16,10 +16,10 @@ type Config struct {
 	}
 	// aws struct
 	aws struct {
-		accessKey string
-		secretKey string
-		region    string
-		bucket    string
+		accessKey    string
+		secretKey    string
+		region string
+		bucket string
 	}
 }
 

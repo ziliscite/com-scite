@@ -12,11 +12,9 @@ type Cover struct {
 }
 
 func NewCover(comicId int64, url string) Cover {
-	// Some url things with AWS S3 will be done on the handler, then it'll be sent here
 	return Cover{
-		ComicID: comicId,
-		URL:     url,
-		// Newly created cover will be displayed
+		ComicID:   comicId,
+		URL:       url,
 		IsCurrent: true,
 	}
 }

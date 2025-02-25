@@ -13,6 +13,7 @@ import (
 type ComicService interface {
 	Index(ctx context.Context) ([]domain.Comic, error)
 	GetComicByID(ctx context.Context, comicId int64) (*domain.Comic, error)
+	GetComicBySlug(ctx context.Context, slug string) (*domain.Comic, error)
 	NewComic(ctx context.Context, title, description, author, artist, comicStatus, comicType string, genres []string) (*domain.Comic, error)
 }
 
@@ -81,4 +82,8 @@ func (c *comicService) NewComic(ctx context.Context, title, description, author,
 	comic.Genres = names
 
 	return comic, nil
+}
+
+func (c *comicService) GetComicBySlug(ctx context.Context, slug string) (*domain.Comic, error) {
+	return c.cr.GetBySlug(ctx, slug)
 }

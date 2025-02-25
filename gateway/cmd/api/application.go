@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	pb "github.com/ziliscite/micro-auth/gateway/pkg/protobuf"
 	"net/http"
+	"time"
 )
 
 type applications struct {
@@ -96,6 +98,9 @@ func (app *applications) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *applications) newComic(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
 	var requestBody struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
@@ -112,7 +117,7 @@ func (app *applications) newComic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comic, err := app.cc.InsertComic(r.Context(), &pb.InsertComicRequest{
+	comic, err := app.cc.InsertComic(ctx, &pb.InsertComicRequest{
 		Title:       requestBody.Title,
 		Description: requestBody.Description,
 		Author:      requestBody.Author,
@@ -124,6 +129,26 @@ func (app *applications) newComic(w http.ResponseWriter, r *http.Request) {
 		Genres: requestBody.Genres,
 
 		// Kudu streaming data multipart form buat upload cover
+	})
+	if err != nil {
+		sendGRPCError(w, err)
+		return
+	}
+
+	if err = writeJSON(w, http.StatusOK, comic); err != nil {
+		sendError(w, http.StatusInternalServerError, err)
+		return
+	}
+}
+
+func (app *applications) getComicBySlug(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	slug := r.PathValue("slug")
+
+	comic, err := app.cc.GetComicBySlug(ctx, &pb.GetComicBySlugRequest{
+		Slug: slug,
 	})
 	if err != nil {
 		sendGRPCError(w, err)
@@ -158,6 +183,7 @@ func (app *applications) routes() *chi.Mux {
 	r.Post("/v0/login", app.login)
 
 	r.Post("/v0/comic", app.newComic)
+	r.Post("/v0/comic/{slug}", app.getComicBySlug)
 
 	return r
 }

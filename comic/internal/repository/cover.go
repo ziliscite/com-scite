@@ -11,7 +11,7 @@ import (
 )
 
 type CoverRepository interface {
-	New(ctx context.Context, comicId int64, cover *domain.Cover) error
+	New(ctx context.Context, cover *domain.Cover) error
 	Deactivate(ctx context.Context, comicId int64) error
 
 	GetActive(ctx context.Context, comicId int64) (*domain.Cover, error)
@@ -28,13 +28,13 @@ func NewCoverRepository(db *pgxpool.Pool) CoverRepository {
 
 // New will insert a new cover, set default to true, and disable old covers
 // Or does that in the service?
-func (r *coverRepository) New(ctx context.Context, comicId int64, cover *domain.Cover) error {
+func (r *coverRepository) New(ctx context.Context, cover *domain.Cover) error {
 	query := `
 		INSERT INTO cover(comic_id, url) 
 		VALUES ($1, $2)
 	`
 
-	_, err := r.db.Exec(ctx, query, comicId, cover.URL)
+	_, err := r.db.Exec(ctx, query, cover.ComicID, cover.URL)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		switch {

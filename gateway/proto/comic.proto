@@ -6,6 +6,19 @@ option go_package = "github.com/ziliscite/micro-comic/pkg/protobuf";
 
 service ComicService {
   rpc InsertComic(InsertComicRequest) returns (InsertComicResponse);
+  rpc GetComicBySlug(GetComicBySlugRequest) returns (GetComicBySlugResponse);
+}
+
+message Comic {
+  int64 id = 1;
+  string title = 2;
+  string slug = 3;
+  string description = 4;
+  string author = 5;
+  string artist = 6;
+  string status = 7;
+  string type = 8;
+  repeated string genres = 9;
 }
 
 message InsertComicRequest {
@@ -19,13 +32,13 @@ message InsertComicRequest {
 }
 
 message InsertComicResponse {
-  int64 id = 1;
-  string title = 2;
-  string slug = 3;
-  string description = 4;
-  string author = 5;
-  string artist = 6;
-  string status = 7;
-  string type = 8;
-  repeated string genres = 9;
+  Comic comic = 1;
+}
+
+message GetComicBySlugRequest {
+  string slug = 1;
+}
+
+message GetComicBySlugResponse {
+  Comic comic = 1;
 }

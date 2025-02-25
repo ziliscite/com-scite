@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ComicService_InsertComic_FullMethodName = "/comic.ComicService/InsertComic"
+	ComicService_InsertComic_FullMethodName    = "/comic.ComicService/InsertComic"
+	ComicService_GetComicBySlug_FullMethodName = "/comic.ComicService/GetComicBySlug"
 )
 
 // ComicServiceClient is the client API for ComicService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ComicServiceClient interface {
 	InsertComic(ctx context.Context, in *InsertComicRequest, opts ...grpc.CallOption) (*InsertComicResponse, error)
+	GetComicBySlug(ctx context.Context, in *GetComicBySlugRequest, opts ...grpc.CallOption) (*GetComicBySlugResponse, error)
 }
 
 type comicServiceClient struct {
@@ -47,11 +49,22 @@ func (c *comicServiceClient) InsertComic(ctx context.Context, in *InsertComicReq
 	return out, nil
 }
 
+func (c *comicServiceClient) GetComicBySlug(ctx context.Context, in *GetComicBySlugRequest, opts ...grpc.CallOption) (*GetComicBySlugResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetComicBySlugResponse)
+	err := c.cc.Invoke(ctx, ComicService_GetComicBySlug_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ComicServiceServer is the server API for ComicService service.
 // All implementations must embed UnimplementedComicServiceServer
 // for forward compatibility.
 type ComicServiceServer interface {
 	InsertComic(context.Context, *InsertComicRequest) (*InsertComicResponse, error)
+	GetComicBySlug(context.Context, *GetComicBySlugRequest) (*GetComicBySlugResponse, error)
 	mustEmbedUnimplementedComicServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedComicServiceServer struct{}
 
 func (UnimplementedComicServiceServer) InsertComic(context.Context, *InsertComicRequest) (*InsertComicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InsertComic not implemented")
+}
+func (UnimplementedComicServiceServer) GetComicBySlug(context.Context, *GetComicBySlugRequest) (*GetComicBySlugResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComicBySlug not implemented")
 }
 func (UnimplementedComicServiceServer) mustEmbedUnimplementedComicServiceServer() {}
 func (UnimplementedComicServiceServer) testEmbeddedByValue()                      {}
@@ -104,6 +120,24 @@ func _ComicService_InsertComic_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComicService_GetComicBySlug_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetComicBySlugRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComicServiceServer).GetComicBySlug(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComicService_GetComicBySlug_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComicServiceServer).GetComicBySlug(ctx, req.(*GetComicBySlugRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ComicService_ServiceDesc is the grpc.ServiceDesc for ComicService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var ComicService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InsertComic",
 			Handler:    _ComicService_InsertComic_Handler,
+		},
+		{
+			MethodName: "GetComicBySlug",
+			Handler:    _ComicService_GetComicBySlug_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package uploads;
+
+option go_package = "github.com/ziliscite/micro-comic/pkg/protobuf";
+
+service UploadService {
+  rpc UploadImage(stream UploadImageRequest) returns (UploadImageResponse);
+}
+
+message UploadImageRequest {
+  oneof data {
+    bytes chunk = 1;
+    Metadata metadata = 2;
+  };
+}
+
+message Metadata {
+  string types = 2;
+  string filename = 3;
+}
+
+message UploadImageResponse {
+  string signed_url = 1;
+}
+
