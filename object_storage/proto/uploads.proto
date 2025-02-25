@@ -6,6 +6,7 @@ option go_package = "github.com/ziliscite/micro-comic/pkg/protobuf";
 
 service UploadService {
   rpc UploadImage(stream UploadImageRequest) returns (UploadImageResponse);
+  rpc DeleteImage(DeleteImageRequest) returns (Nothing);
 }
 
 message UploadImageRequest {
@@ -16,11 +17,16 @@ message UploadImageRequest {
 }
 
 message Metadata {
-  string types = 2;
-  string filename = 3;
+  string types = 1;
+  string filename = 2;
 }
 
 message UploadImageResponse {
   string signed_url = 1;
 }
 
+message DeleteImageRequest {
+  string signed_url = 1;
+}
+
+message Nothing {}

@@ -96,7 +96,7 @@ func (c *comicRepository) GetBySlug(ctx context.Context, comicSlug string) (*dom
 			c.comic_id, c.title, c.slug, c.description,
 			c.author, c.artist, c.status, c.type,
 			ARRAY_AGG(g.name ORDER BY g.name) AS genre,
-			c.created_at, c.version
+			c.created_at, c.updated_at, c.version
 		FROM comic c
 		JOIN comic_genre cg ON c.comic_id = cg.comic_id
 		JOIN genre g ON cg.genre_id = g.genre_id
@@ -105,12 +105,14 @@ func (c *comicRepository) GetBySlug(ctx context.Context, comicSlug string) (*dom
 	`
 
 	var comic domain.Comic
+	var status string
+	var types string
 	if err := c.db.QueryRow(ctx, query, comicSlug).Scan(
 		&comic.ID, &comic.Title, &comic.Slug,
 		&comic.Description, &comic.Author,
-		&comic.Artist, &comic.Status, &comic.Type,
-		&comic.Genres, &comic.CoverUrl,
-		&comic.CreatedAt, &comic.UpdatedAt, &comic.Version,
+		&comic.Artist, &status, &types,
+		&comic.Genres, &comic.CreatedAt,
+		&comic.UpdatedAt, &comic.Version,
 	); err != nil {
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
@@ -119,6 +121,9 @@ func (c *comicRepository) GetBySlug(ctx context.Context, comicSlug string) (*dom
 			return nil, err
 		}
 	}
+
+	comic.Status, _ = domain.NewComicStatus(status)
+	comic.Type, _ = domain.NewComicType(types)
 
 	return &comic, nil
 }

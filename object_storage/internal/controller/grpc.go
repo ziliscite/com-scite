@@ -2,9 +2,10 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
-	"github.com/ziliscite/com-scite/object_storage/internal/service"
+	"github.com/ziliscite/com-scite/object_storage/internal/repository"
 	pb "github.com/ziliscite/com-scite/object_storage/pkg/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,10 +21,10 @@ const maxImageSize = 10 << 20
 
 type GrpcServer struct {
 	pb.UnimplementedUploadServiceServer
-	st service.Saver
+	st repository.Write
 }
 
-func NewGrpcServer(st service.Saver) *GrpcServer {
+func NewGrpcServer(st repository.Write) *GrpcServer {
 	return &GrpcServer{
 		st: st,
 	}
@@ -85,6 +86,15 @@ func (s *GrpcServer) UploadImage(stream pb.UploadService_UploadImageServer) erro
 
 	slog.Info("saved image", "url", signedUrl, "size", imageSize)
 	return nil
+}
+
+func (s *GrpcServer) DeleteImage(ctx context.Context, req *pb.DeleteImageRequest) (*pb.Nothing, error) {
+	if err := s.st.Delete(req.SignedUrl); err != nil {
+		slog.Error("delete image failed", "error", err.Error())
+		return nil, status.Errorf(codes.Internal, "cannot delete image from the store: %v", err)
+	}
+
+	return &pb.Nothing{}, nil
 }
 
 func (s *GrpcServer) Run(port int) {

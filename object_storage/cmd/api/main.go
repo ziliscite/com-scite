@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/ziliscite/com-scite/object_storage/internal/controller"
-	"github.com/ziliscite/com-scite/object_storage/internal/service"
+	"github.com/ziliscite/com-scite/object_storage/internal/repository"
 	"github.com/ziliscite/com-scite/object_storage/pkg/encryptor"
 	"os"
 
@@ -10,8 +10,8 @@ import (
 )
 
 func main() {
-	enc := encryptor.NewEncryptor(os.Getenv("KEY"), os.Getenv("IV"))
-	store := service.NewStore(enc)
+	enc := encryptor.NewEncryptor(os.Getenv("KEY"))
+	store := repository.NewStore(enc)
 
 	httpServer := controller.NewHttpServer(store)
 	grpcServer := controller.NewGrpcServer(store)

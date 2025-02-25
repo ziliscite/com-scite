@@ -2,19 +2,17 @@ package service
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"github.com/ziliscite/com-scite/comic/internal/domain"
+	"github.com/ziliscite/com-scite/comic/internal/repository"
 	pb "github.com/ziliscite/com-scite/comic/pkg/protobuf"
 	"io"
 	"log/slog"
-	"os"
-	"path/filepath"
-	"time"
-
-	"github.com/ziliscite/com-scite/comic/internal/repository"
 )
 
 type CoverService interface {
+	UploadImage(ctx context.Context, image bytes.Buffer, filename string, comicId int64) (*domain.Cover, error)
 }
 
 type coverService struct {
@@ -22,29 +20,18 @@ type coverService struct {
 	us  pb.UploadServiceClient
 }
 
-func NewCoverService(cvr repository.CoverRepository) CoverService {
-	return &coverService{cvr: cvr}
+func NewCoverService(cvr repository.CoverRepository, us pb.UploadServiceClient) CoverService {
+	return &coverService{cvr: cvr, us: us}
 }
 
 func (c *coverService) GetActive(ctx context.Context, comicId int64) (*domain.Cover, error) {
 	panic("implement me")
 }
 
-// , filename string, comicId int64
-func (c *coverService) UploadImage(ctx context.Context) (*domain.Cover, error) {
-	file, err := os.Open("./external/knight.jpeg")
-	if err != nil {
-		slog.Error("cannot open image file: ", "error", err.Error())
-		return nil, err
-	}
-	defer file.Close()
-
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	// get the stream
+func (c *coverService) UploadImage(ctx context.Context, image bytes.Buffer, filename string, comicId int64) (*domain.Cover, error) {
 	stream, err := c.us.UploadImage(ctx)
 	if err != nil {
+		slog.Error("cannot create stream: ", "error", err.Error())
 		return nil, err
 	}
 
@@ -52,7 +39,7 @@ func (c *coverService) UploadImage(ctx context.Context) (*domain.Cover, error) {
 	req := &pb.UploadImageRequest{
 		Data: &pb.UploadImageRequest_Metadata{
 			Metadata: &pb.Metadata{
-				Filename: filepath.Base("knight.jpeg"),
+				Filename: filename,
 				Types:    "cover",
 			},
 		},
@@ -65,7 +52,7 @@ func (c *coverService) UploadImage(ctx context.Context) (*domain.Cover, error) {
 	}
 
 	// create buffer to send a file
-	reader := bufio.NewReader(file)
+	reader := bufio.NewReader(&image)
 	buffer := make([]byte, 1024)
 
 	for {
@@ -98,8 +85,20 @@ func (c *coverService) UploadImage(ctx context.Context) (*domain.Cover, error) {
 		return nil, err
 	}
 
-	cover := domain.NewCover(1, res.SignedUrl)
-	if err = c.cvr.New(ctx, &cover); err != nil {
+	cover := domain.NewCover(comicId, res.SignedUrl)
+	oldKey, err := c.cvr.New(ctx, &cover)
+	if err != nil {
+		switch {
+		// case errors.Is(err, repository.ErrDuplicate):
+		// bikin error wrapper lagi
+		default:
+			return nil, err
+		}
+	}
+
+	// delete old cover from the fileserver
+	if _, err = c.us.DeleteImage(ctx, &pb.DeleteImageRequest{SignedUrl: oldKey}); err != nil {
+		slog.Error("cannot delete old cover: ", "error", err.Error())
 		return nil, err
 	}
 

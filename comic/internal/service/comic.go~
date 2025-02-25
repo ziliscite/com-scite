@@ -43,7 +43,7 @@ func (c *comicService) GetComicByID(ctx context.Context, comicId int64) (*domain
 		return nil, err
 	}
 
-	comic.CoverUrl = cover.FileKey
+	comic.CoverUrl = cover.URL
 
 	return comic, nil
 }

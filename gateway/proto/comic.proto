@@ -42,3 +42,30 @@ message GetComicBySlugRequest {
 message GetComicBySlugResponse {
   Comic comic = 1;
 }
+
+service CoverService {
+  rpc UploadCover(stream UploadCoverRequest) returns (UploadCoverResponse);
+}
+
+message Cover {
+  int64 id = 1;
+  int64 comic_id = 2;
+  string file_key = 3;
+  bool is_current = 4;
+}
+
+message UploadCoverRequest {
+  oneof data {
+    bytes chunk = 1;
+    CoverMetadata metadata = 2;
+  };
+}
+
+message CoverMetadata {
+  int64 comic_id = 1;
+  string filename = 2;
+}
+
+message UploadCoverResponse {
+  Cover cover = 1;
+}

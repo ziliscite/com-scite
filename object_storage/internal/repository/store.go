@@ -1,23 +1,26 @@
-package service
+package repository
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/ziliscite/com-scite/object_storage/pkg/encryptor"
 	"os"
+	"path/filepath"
 )
 
-type Saver interface {
+type Write interface {
 	Save(filename, types string, imageData bytes.Buffer) (string, error)
+	Delete(signedUrl string) error
 }
 
-type Getter interface {
+type Read interface {
 	Get(signedUrl string) (string, error)
 }
 
 type ImageStore interface {
-	Saver
-	Getter
+	Write
+	Read
 }
 
 type store struct {
@@ -38,7 +41,12 @@ func (s *store) Save(filename, types string, imageData bytes.Buffer) (string, er
 		return "", fmt.Errorf("cannot encrypt image url: %w", err)
 	}
 
-	file, err := os.Create("./store/" + imagePath)
+	filePath := s.createFilePath(imagePath)
+	if err = os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return "", fmt.Errorf("cannot create directory: %w", err)
+	}
+
+	file, err := os.Create(filePath)
 	if err != nil {
 		return "", fmt.Errorf("cannot create image file: %w", err)
 	}
@@ -57,7 +65,34 @@ func (s *store) Get(signedUrl string) (string, error) {
 		return "", fmt.Errorf("cannot decrypt image url: %w", err)
 	}
 
-	fullFilePath := "./store/" + string(filePath)
+	return s.createFilePath(string(filePath)), nil
+}
 
-	return fullFilePath, nil
+func (s *store) Delete(signedUrl string) error {
+	// first insert
+	if signedUrl == "" {
+		return nil
+	}
+	
+	fileString, err := s.en.Decrypt(signedUrl)
+	if err != nil {
+		return fmt.Errorf("cannot decrypt image url: %w", err)
+	}
+
+	filePath := s.createFilePath(string(fileString))
+
+	if err = os.Remove(filePath); err != nil {
+		switch {
+		case errors.Is(err, os.ErrNotExist):
+			return nil
+		default:
+			return fmt.Errorf("cannot delete image file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *store) createFilePath(filePath string) string {
+	return "./store/" + filePath
 }

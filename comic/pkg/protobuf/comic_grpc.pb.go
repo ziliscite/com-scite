@@ -157,3 +157,98 @@ var ComicService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "comic.proto",
 }
+
+const (
+	CoverService_UploadCover_FullMethodName = "/comic.CoverService/UploadCover"
+)
+
+// CoverServiceClient is the client API for CoverService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type CoverServiceClient interface {
+	UploadCover(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadCoverRequest, UploadCoverResponse], error)
+}
+
+type coverServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCoverServiceClient(cc grpc.ClientConnInterface) CoverServiceClient {
+	return &coverServiceClient{cc}
+}
+
+func (c *coverServiceClient) UploadCover(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadCoverRequest, UploadCoverResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &CoverService_ServiceDesc.Streams[0], CoverService_UploadCover_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[UploadCoverRequest, UploadCoverResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CoverService_UploadCoverClient = grpc.ClientStreamingClient[UploadCoverRequest, UploadCoverResponse]
+
+// CoverServiceServer is the server API for CoverService service.
+// All implementations must embed UnimplementedCoverServiceServer
+// for forward compatibility.
+type CoverServiceServer interface {
+	UploadCover(grpc.ClientStreamingServer[UploadCoverRequest, UploadCoverResponse]) error
+	mustEmbedUnimplementedCoverServiceServer()
+}
+
+// UnimplementedCoverServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedCoverServiceServer struct{}
+
+func (UnimplementedCoverServiceServer) UploadCover(grpc.ClientStreamingServer[UploadCoverRequest, UploadCoverResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method UploadCover not implemented")
+}
+func (UnimplementedCoverServiceServer) mustEmbedUnimplementedCoverServiceServer() {}
+func (UnimplementedCoverServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeCoverServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CoverServiceServer will
+// result in compilation errors.
+type UnsafeCoverServiceServer interface {
+	mustEmbedUnimplementedCoverServiceServer()
+}
+
+func RegisterCoverServiceServer(s grpc.ServiceRegistrar, srv CoverServiceServer) {
+	// If the following call pancis, it indicates UnimplementedCoverServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&CoverService_ServiceDesc, srv)
+}
+
+func _CoverService_UploadCover_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CoverServiceServer).UploadCover(&grpc.GenericServerStream[UploadCoverRequest, UploadCoverResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CoverService_UploadCoverServer = grpc.ClientStreamingServer[UploadCoverRequest, UploadCoverResponse]
+
+// CoverService_ServiceDesc is the grpc.ServiceDesc for CoverService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var CoverService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "comic.CoverService",
+	HandlerType: (*CoverServiceServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UploadCover",
+			Handler:       _CoverService_UploadCover_Handler,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "comic.proto",
+}

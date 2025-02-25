@@ -14,12 +14,14 @@ import (
 )
 
 type ComicServer struct {
-	cc *controller.ComicController
+	cc  *controller.ComicController
+	cvc *controller.CoverController
 }
 
-func NewComicServer(cc *controller.ComicController) *ComicServer {
+func NewComicServer(cc *controller.ComicController, cvc *controller.CoverController) *ComicServer {
 	return &ComicServer{
-		cc: cc,
+		cc:  cc,
+		cvc: cvc,
 	}
 }
 
@@ -34,6 +36,7 @@ func (cs *ComicServer) Serve(port int) error {
 	srv := grpc.NewServer()
 
 	pb.RegisterComicServiceServer(srv, cs.cc)
+	pb.RegisterCoverServiceServer(srv, cs.cvc)
 
 	return srv.Serve(listen)
 }

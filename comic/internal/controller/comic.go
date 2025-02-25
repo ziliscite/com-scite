@@ -64,7 +64,7 @@ func (cc *ComicController) InsertComic(ctx context.Context, req *pb.InsertComicR
 func (cc *ComicController) GetComicBySlug(ctx context.Context, req *pb.GetComicBySlugRequest) (*pb.GetComicBySlugResponse, error) {
 	comic, err := cc.cs.GetComicBySlug(ctx, req.GetSlug())
 	if err != nil {
-		slog.Error("NewComic failed", "error", err.Error())
+		slog.Error("Get Comic failed", "error", err.Error())
 		switch {
 		case errors.Is(err, context.DeadlineExceeded):
 			return nil, status.Error(codes.DeadlineExceeded, err.Error())
@@ -76,6 +76,8 @@ func (cc *ComicController) GetComicBySlug(ctx context.Context, req *pb.GetComicB
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
+
+	// get cover as well
 
 	return &pb.GetComicBySlugResponse{
 		Comic: &pb.Comic{

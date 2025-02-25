@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	pb "github.com/ziliscite/micro-auth/gateway/pkg/protobuf"
+	"io"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -14,6 +17,7 @@ type applications struct {
 	auc pb.AuthServiceClient
 	atc pb.ActivationServiceClient
 	cc  pb.ComicServiceClient
+	cvc pb.CoverServiceClient
 }
 
 func (app *applications) register(w http.ResponseWriter, r *http.Request) {
@@ -161,6 +165,101 @@ func (app *applications) getComicBySlug(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+const maxImageSize = 10 << 20
+
+func (app *applications) newCover(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	slug := r.PathValue("slug")
+
+	comic, err := app.cc.GetComicBySlug(ctx, &pb.GetComicBySlugRequest{
+		Slug: slug,
+	})
+	if err != nil {
+		sendGRPCError(w, err)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxImageSize)
+
+	// Parse the multipart form
+	if err = r.ParseMultipartForm(maxImageSize); err != nil {
+		sendError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// Retrieve the file from the form data
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		sendError(w, http.StatusBadRequest, err)
+		return
+	}
+	defer file.Close()
+
+	stream, err := app.cvc.UploadCover(ctx)
+	if err != nil {
+		sendGRPCError(w, err)
+		return
+	}
+
+	// build metadata to be sent first
+	req := &pb.UploadCoverRequest{
+		Data: &pb.UploadCoverRequest_Metadata{
+			Metadata: &pb.CoverMetadata{
+				Filename: header.Filename,
+				ComicId:  comic.Comic.Id,
+			},
+		},
+	}
+
+	// send the first request to the server
+	if err = stream.Send(req); err != nil {
+		sendError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// create buffer to send a file
+	reader := bufio.NewReader(file)
+	buffer := make([]byte, 1024)
+
+	for {
+		// read the data to the buffer
+		n, err := reader.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			sendError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		req := &pb.UploadCoverRequest{
+			Data: &pb.UploadCoverRequest_Chunk{
+				Chunk: buffer[:n],
+			},
+		}
+
+		// send chunk to the server
+		if err = stream.Send(req); err != nil {
+			sendError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err = writeJSON(w, http.StatusOK, res); err != nil {
+		slog.Error("failed to write json", "error", err.Error())
+		sendError(w, http.StatusInternalServerError, err)
+		return
+	}
+}
+
 func (app *applications) routes() *chi.Mux {
 	r := chi.NewRouter()
 
@@ -182,8 +281,9 @@ func (app *applications) routes() *chi.Mux {
 	r.Post("/v0/activate", app.activate)
 	r.Post("/v0/login", app.login)
 
+	r.Post("/v0/comic/{slug}/cover", app.newCover)
+	r.Get("/v0/comic/{slug}", app.getComicBySlug)
 	r.Post("/v0/comic", app.newComic)
-	r.Post("/v0/comic/{slug}", app.getComicBySlug)
 
 	return r
 }

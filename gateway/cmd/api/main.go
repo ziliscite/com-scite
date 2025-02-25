@@ -38,11 +38,13 @@ func main() {
 	authServ := pb.NewAuthServiceClient(authClient)
 	activationServ := pb.NewActivationServiceClient(activationClient)
 	comicServ := pb.NewComicServiceClient(comicClient)
+	coverServ := pb.NewCoverServiceClient(comicClient)
 
 	app := &applications{
 		auc: authServ,
 		atc: activationServ,
 		cc:  comicServ,
+		cvc: coverServ,
 	}
 
 	server := &http.Server{Addr: ":80", Handler: app.routes()}

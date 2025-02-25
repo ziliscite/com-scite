@@ -1,77 +1,66 @@
 package encryptor
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"io"
 )
 
 type Encryptor struct {
 	key string
-	iv  string
 }
 
-func NewEncryptor(key, iv string) *Encryptor {
+func NewEncryptor(key string) *Encryptor {
 	return &Encryptor{
 		key: key,
-		iv:  iv,
 	}
-}
-
-func (en Encryptor) Decrypt(encrypted string) ([]byte, error) {
-	ciphertext, err := base64.StdEncoding.DecodeString(encrypted)
-
-	if err != nil {
-		return nil, err
-	}
-
-	block, err := aes.NewCipher([]byte(en.key))
-	if err != nil {
-		return nil, err
-	}
-
-	if len(ciphertext)%aes.BlockSize != 0 {
-		return nil, fmt.Errorf("block size cant be zero")
-	}
-
-	mode := cipher.NewCBCDecrypter(block, []byte(en.iv))
-	mode.CryptBlocks(ciphertext, ciphertext)
-	ciphertext = en.padding(ciphertext)
-
-	return ciphertext, nil
-}
-
-func (en Encryptor) padding(src []byte) []byte {
-	length := len(src)
-	unpad := int(src[length-1])
-
-	return src[:(length - unpad)]
 }
 
 func (en Encryptor) Encrypt(plaintext string) (string, error) {
-	var plainTextBlock []byte
-	length := len(plaintext)
-
-	if length%16 != 0 {
-		extendBlock := 16 - (length % 16)
-		plainTextBlock = make([]byte, length+extendBlock)
-		copy(plainTextBlock[length:], bytes.Repeat([]byte{uint8(extendBlock)}, extendBlock))
-	} else {
-		plainTextBlock = make([]byte, length)
+	block, err := aes.NewCipher([]byte(en.key))
+	if err != nil {
+		return "", fmt.Errorf("cipher creation failed: %w", err)
 	}
 
-	copy(plainTextBlock, plaintext)
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", fmt.Errorf("GCM creation failed: %w", err)
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", fmt.Errorf("nonce generation failed: %w", err)
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
+	return base64.RawURLEncoding.EncodeToString(ciphertext), nil
+}
+
+func (en Encryptor) Decrypt(encrypted string) ([]byte, error) {
+	ciphertext, err := base64.RawURLEncoding.DecodeString(encrypted)
+	if err != nil {
+		return nil, fmt.Errorf("base64 decode failed: %w", err)
+	}
 
 	block, err := aes.NewCipher([]byte(en.key))
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("cipher creation failed: %w", err)
 	}
 
-	ciphertext := make([]byte, len(plainTextBlock))
-	mode := cipher.NewCBCEncrypter(block, []byte(en.iv))
-	mode.CryptBlocks(ciphertext, plainTextBlock)
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("GCM creation failed: %w", err)
+	}
 
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return nil, errors.New("ciphertext too short")
+	}
+
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	return gcm.Open(nil, nonce, ciphertext, nil)
 }

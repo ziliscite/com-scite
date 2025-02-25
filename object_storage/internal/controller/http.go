@@ -3,16 +3,16 @@ package controller
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/ziliscite/com-scite/object_storage/internal/service"
+	"github.com/ziliscite/com-scite/object_storage/internal/repository"
 	"net/http"
 	"os"
 )
 
 type HttpServer struct {
-	st service.Getter
+	st repository.Read
 }
 
-func NewHttpServer(st service.Getter) *HttpServer {
+func NewHttpServer(st repository.Read) *HttpServer {
 	return &HttpServer{
 		st: st,
 	}
