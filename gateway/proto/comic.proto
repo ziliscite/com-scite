@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package comic;
+
+option go_package = "github.com/ziliscite/micro-comic/pkg/protobuf";
+
+service ComicService {
+  rpc InsertComic(InsertComicRequest) returns (InsertComicResponse);
+  rpc GetComicBySlug(GetComicBySlugRequest) returns (GetComicBySlugResponse);
+}
+
+message Comic {
+  int64 id = 1;
+  string title = 2;
+  string slug = 3;
+  string description = 4;
+  string author = 5;
+  string artist = 6;
+  string status = 7;
+  string type = 8;
+  repeated string genres = 9;
+}
+
+message InsertComicRequest {
+  string title = 1;
+  string description = 2;
+  string author = 3;
+  string artist = 4;
+  string status = 5;
+  string type = 6;
+  repeated string genres = 7;
+}
+
+message InsertComicResponse {
+  Comic comic = 1;
+}
+
+message GetComicBySlugRequest {
+  string slug = 1;
+}
+
+message GetComicBySlugResponse {
+  Comic comic = 1;
+}
+
+service CoverService {
+  rpc UploadCover(stream UploadCoverRequest) returns (UploadCoverResponse);
+}
+
+message Cover {
+  int64 id = 1;
+  int64 comic_id = 2;
+  string file_key = 3;
+  bool is_current = 4;
+}
+
+message UploadCoverRequest {
+  oneof data {
+    bytes chunk = 1;
+    CoverMetadata metadata = 2;
+  };
+}
+
+message CoverMetadata {
+  int64 comic_id = 1;
+  string filename = 2;
+}
+
+message UploadCoverResponse {
+  Cover cover = 1;
+}

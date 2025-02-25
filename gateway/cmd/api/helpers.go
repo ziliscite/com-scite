@@ -59,8 +59,10 @@ func sendGRPCError(w http.ResponseWriter, e error) {
 			sendError(w, http.StatusUnauthorized, errors.New("authentication failed. Please check your credentials"))
 		case codes.PermissionDenied:
 			sendError(w, http.StatusForbidden, errors.New("you do not have permission to access this resource"))
+
 		case codes.InvalidArgument:
 			sendError(w, http.StatusBadRequest, errors.New("invalid input provided. Please check your request"))
+
 		case codes.NotFound:
 			sendError(w, http.StatusNotFound, errors.New("resource not found"))
 		case codes.AlreadyExists:

@@ -29,6 +29,7 @@ func NewService(us service.UserService, acs pb.ActivationServiceClient, secrets 
 }
 
 func (s Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	// Does the context timeout is declared on the client? Like, in auth, the gateway
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 

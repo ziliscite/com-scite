@@ -1,6 +1,11 @@
 package validator
 
-import "sync"
+import (
+	"encoding/json"
+	"sync"
+)
+
+// Maybe use this for each domain
 
 type Validator struct {
 	errs map[string]string
@@ -26,6 +31,8 @@ func (v *Validator) AddError(key, message string) {
 	v.mu.Unlock()
 }
 
-func (v *Validator) Errors() map[string]string {
-	return v.errs
+// Error to match error interface, so that I can return the validation error through grpc.
+func (v *Validator) Error() string {
+	byt, _ := json.Marshal(v.errs)
+	return string(byt)
 }
