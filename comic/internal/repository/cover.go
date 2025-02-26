@@ -137,15 +137,13 @@ func (r *coverRepository) GetActive(ctx context.Context, comicId int64) (*domain
 	query := `
 		SELECT cover_id, comic_id, file_key, is_current, created_at, updated_at 
 		FROM cover 
-		WHERE comic_id = $1 AND is_current = true
-		ORDER BY created_at;
+		WHERE comic_id = $1 AND is_current = true;
  	`
 
 	var cover domain.Cover
 	if err := r.db.QueryRow(ctx, query, comicId).Scan(
-		&cover.ID, &cover.ComicID,
-		&cover.FileKey, &cover.IsCurrent,
-		&cover.CreatedAt,
+		&cover.ID, &cover.ComicID, &cover.FileKey,
+		&cover.IsCurrent, &cover.CreatedAt, &cover.UpdatedAt,
 	); err != nil {
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):

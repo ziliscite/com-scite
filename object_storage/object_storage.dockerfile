@@ -13,7 +13,7 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder app/object_storage ./
-COPY store/cover/knight.jpeg ./store/cover/knight.jpeg
+COPY store ./store
 
 EXPOSE 80
 

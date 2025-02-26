@@ -155,11 +155,12 @@ func (app *applications) getComicBySlug(w http.ResponseWriter, r *http.Request) 
 		Slug: slug,
 	})
 	if err != nil {
+		slog.Error("Failed to get comic by slug", "error", err.Error())
 		sendGRPCError(w, err)
 		return
 	}
 
-	if err = writeJSON(w, http.StatusOK, comic); err != nil {
+	if err = writeJSON(w, http.StatusOK, map[string]any{"response": comic}); err != nil {
 		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -249,11 +250,11 @@ func (app *applications) newCover(w http.ResponseWriter, r *http.Request) {
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		sendError(w, http.StatusInternalServerError, err)
+		sendGRPCError(w, err)
 		return
 	}
 
-	if err = writeJSON(w, http.StatusOK, res); err != nil {
+	if err = writeJSON(w, http.StatusCreated, res); err != nil {
 		slog.Error("failed to write json", "error", err.Error())
 		sendError(w, http.StatusInternalServerError, err)
 		return

@@ -45,7 +45,7 @@ func main() {
 	comicService := service.NewComicService(comicRepository, coverRepository, genreRepository, comicGenreRepository)
 	coverService := service.NewCoverService(coverRepository, uplServ)
 
-	comicController := controller.NewComicController(comicService, coverService)
+	comicController := controller.NewComicController(comicService)
 	coverController := controller.NewCoverController(coverService)
 
 	server := NewComicServer(comicController, coverController)

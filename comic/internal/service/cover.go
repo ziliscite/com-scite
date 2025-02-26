@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"github.com/ziliscite/com-scite/comic/internal/domain"
 	"github.com/ziliscite/com-scite/comic/internal/repository"
 	pb "github.com/ziliscite/com-scite/comic/pkg/protobuf"
@@ -13,6 +15,7 @@ import (
 
 type CoverService interface {
 	UploadImage(ctx context.Context, image bytes.Buffer, filename string, comicId int64) (*domain.Cover, error)
+	GetActive(ctx context.Context, comicId int64) (*domain.Cover, error)
 }
 
 type coverService struct {
@@ -25,13 +28,12 @@ func NewCoverService(cvr repository.CoverRepository, us pb.UploadServiceClient) 
 }
 
 func (c *coverService) GetActive(ctx context.Context, comicId int64) (*domain.Cover, error) {
-	panic("implement me")
+	return c.cvr.GetActive(ctx, comicId)
 }
 
 func (c *coverService) UploadImage(ctx context.Context, image bytes.Buffer, filename string, comicId int64) (*domain.Cover, error) {
 	stream, err := c.us.UploadImage(ctx)
 	if err != nil {
-		slog.Error("cannot create stream: ", "error", err.Error())
 		return nil, err
 	}
 
@@ -47,7 +49,6 @@ func (c *coverService) UploadImage(ctx context.Context, image bytes.Buffer, file
 
 	// send the first request to the server
 	if err = stream.Send(req); err != nil {
-		slog.Error("cannot read chunk to buffer: ", "error", err.Error(), "message", stream.RecvMsg(nil))
 		return nil, err
 	}
 
@@ -62,7 +63,6 @@ func (c *coverService) UploadImage(ctx context.Context, image bytes.Buffer, file
 			break
 		}
 		if err != nil {
-			slog.Error("cannot read chunk to buffer: ", "error", err.Error())
 			return nil, err
 		}
 
@@ -74,14 +74,12 @@ func (c *coverService) UploadImage(ctx context.Context, image bytes.Buffer, file
 
 		// send chunk to the server
 		if err = stream.Send(req); err != nil {
-			slog.Error("cannot send chunk to server: ", "error", err.Error())
 			return nil, err
 		}
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		slog.Error("cannot receive response: ", "error", err.Error())
 		return nil, err
 	}
 
@@ -89,17 +87,34 @@ func (c *coverService) UploadImage(ctx context.Context, image bytes.Buffer, file
 	oldKey, err := c.cvr.New(ctx, &cover)
 	if err != nil {
 		switch {
-		// case errors.Is(err, repository.ErrDuplicate):
-		// bikin error wrapper lagi
+		case errors.Is(err, repository.ErrDuplicate):
+			return nil, fmt.Errorf("%w: %s", ErrDuplicate, err.Error())
 		default:
 			return nil, err
 		}
 	}
 
-	// delete old cover from the fileserver
-	if _, err = c.us.DeleteImage(ctx, &pb.DeleteImageRequest{SignedUrl: oldKey}); err != nil {
-		slog.Error("cannot delete old cover: ", "error", err.Error())
-		return nil, err
+	if oldKey != "" {
+		//if _, err = c.us.DeleteImage(ctx, &pb.DeleteImageRequest{SignedUrl: oldKey}); err != nil {
+		//	if st, ok := status.FromError(err); ok {
+		//		switch st.Code() {
+		//		case codes.InvalidArgument:
+		//			return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
+		//		case codes.NotFound:
+		//			return nil, fmt.Errorf("%w: %s", ErrNotFound, err.Error())
+		//		default:
+		//			return nil, err
+		//		}
+		//	}
+		//}
+
+		// Ignore error to maintain data consistency
+		go func() {
+			_, err = c.us.DeleteImage(ctx, &pb.DeleteImageRequest{SignedUrl: oldKey})
+			if err != nil {
+				slog.Error("cannot delete old cover", "error", err.Error())
+			}
+		}()
 	}
 
 	return &cover, nil

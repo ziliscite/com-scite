@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ziliscite/com-scite/object_storage/internal/repository"
+	"github.com/ziliscite/com-scite/object_storage/pkg/encryptor"
 	"net/http"
 	"os"
 )
@@ -24,7 +26,12 @@ func (h *HttpServer) Serve(ctx *gin.Context) {
 	// Decrypt the signed URL
 	filePath, err := h.st.Get(signedUrl)
 	if err != nil {
-		ctx.String(http.StatusForbidden, "Invalid or expired URL")
+		switch {
+		case errors.Is(err, encryptor.ErrInvalidCiphertext):
+			ctx.String(http.StatusBadRequest, "URL is invalid or expired")
+		default:
+			ctx.String(http.StatusForbidden, "Expired URL")
+		}
 		return
 	}
 

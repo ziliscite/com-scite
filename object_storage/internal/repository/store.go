@@ -69,11 +69,6 @@ func (s *store) Get(signedUrl string) (string, error) {
 }
 
 func (s *store) Delete(signedUrl string) error {
-	// first insert
-	if signedUrl == "" {
-		return nil
-	}
-	
 	fileString, err := s.en.Decrypt(signedUrl)
 	if err != nil {
 		return fmt.Errorf("cannot decrypt image url: %w", err)
@@ -84,7 +79,7 @@ func (s *store) Delete(signedUrl string) error {
 	if err = os.Remove(filePath); err != nil {
 		switch {
 		case errors.Is(err, os.ErrNotExist):
-			return nil
+			return err
 		default:
 			return fmt.Errorf("cannot delete image file: %w", err)
 		}

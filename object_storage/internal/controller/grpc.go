@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ziliscite/com-scite/object_storage/internal/repository"
+	"github.com/ziliscite/com-scite/object_storage/pkg/encryptor"
 	pb "github.com/ziliscite/com-scite/object_storage/pkg/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -90,8 +91,14 @@ func (s *GrpcServer) UploadImage(stream pb.UploadService_UploadImageServer) erro
 
 func (s *GrpcServer) DeleteImage(ctx context.Context, req *pb.DeleteImageRequest) (*pb.Nothing, error) {
 	if err := s.st.Delete(req.SignedUrl); err != nil {
-		slog.Error("delete image failed", "error", err.Error())
-		return nil, status.Errorf(codes.Internal, "cannot delete image from the store: %v", err)
+		switch {
+		case errors.Is(err, encryptor.ErrInvalidCiphertext):
+			return nil, status.Errorf(codes.InvalidArgument, "URL is invalid or expired")
+		case errors.Is(err, os.ErrNotExist):
+			return nil, status.Errorf(codes.NotFound, "File not found")
+		default:
+			return nil, status.Errorf(codes.Internal, "cannot delete image from the store: %v", err)
+		}
 	}
 
 	return &pb.Nothing{}, nil

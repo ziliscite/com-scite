@@ -41,6 +41,7 @@ message GetComicBySlugRequest {
 
 message GetComicBySlugResponse {
   Comic comic = 1;
+  Cover cover = 2;
 }
 
 service CoverService {

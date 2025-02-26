@@ -8,9 +8,13 @@ import (
 
 func TestEncryptor(t *testing.T) {
 	// Setup
-	validKey := "0123456789abcdef0123456789abcdef" // 32 bytes
-	invalidKey := "0123456789abcdef"               // 16 bytes (valid AES-128 but wrong)
-	encryptor := Encryptor{key: validKey}
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	invalidKey := "0123456780123456789abcdef9abcdef0123456780123456789abcdef9abcdef"
+	shortKey := "0123456789abcdef"
+	encryptor, err := NewEncryptor(validKey)
+	if err != nil {
+		t.Fatalf("Failed to create encryptor: %v", err)
+	}
 
 	t.Run("basic encryption/decryption", func(t *testing.T) {
 		plaintext := "Hello, World!"
@@ -43,6 +47,13 @@ func TestEncryptor(t *testing.T) {
 
 		if string(decrypted) != plaintext {
 			t.Errorf("Expected empty string, got %q", decrypted)
+		}
+	})
+
+	t.Run("invalid key length", func(t *testing.T) {
+		_, err := NewEncryptor(shortKey)
+		if err == nil {
+			t.Fatalf("Should've failed to create invalid encryptor: %v", err)
 		}
 	})
 
@@ -99,22 +110,25 @@ func TestEncryptor(t *testing.T) {
 		}
 	})
 
-	t.Run("wrong key", func(t *testing.T) {
+	t.Run("wrong encKey", func(t *testing.T) {
 		plaintext := "secret message"
 		encrypted, err := encryptor.Encrypt(plaintext)
 		if err != nil {
 			t.Fatalf("Encryption failed: %v", err)
 		}
 
-		// Try decrypting with invalid key
-		invalidEncryptor := Encryptor{key: invalidKey}
+		// Try decrypting with invalid encKey
+		invalidEncryptor, err := NewEncryptor(invalidKey)
+		if err != nil {
+			t.Fatalf("Failed to create invalid encryptor: %v", err)
+		}
 		_, err = invalidEncryptor.Decrypt(encrypted)
 		if err == nil {
-			t.Error("Expected error with invalid key")
+			t.Error("Expected error with invalid encKey")
 		}
 	})
 
-	t.Run("unique ciphertexts", func(t *testing.T) {
+	t.Run("idempotent ciphertexts", func(t *testing.T) {
 		plaintext := "same input"
 		enc1, err := encryptor.Encrypt(plaintext)
 		if err != nil {
@@ -126,8 +140,8 @@ func TestEncryptor(t *testing.T) {
 			t.Fatalf("Second encryption failed: %v", err)
 		}
 
-		if enc1 == enc2 {
-			t.Error("Same plaintext should produce different ciphertexts")
+		if enc1 != enc2 {
+			t.Error("Same plaintext should produce same ciphertexts")
 		}
 	})
 
@@ -163,17 +177,17 @@ func TestEncryptor(t *testing.T) {
 		}
 	})
 
-	t.Run("key validation", func(t *testing.T) {
+	t.Run("encKey validation", func(t *testing.T) {
 		invalidKeys := []string{
-			"16-byte-key",            // Too short
-			"24-byte-key-1234567890", // AES-192 (acceptable if supported)
-			"",                       // Empty key
+			"16-byte-encKey",            // Too short
+			"24-byte-encKey-1234567890", // AES-192 (acceptable if supported)
+			"",                          // Empty encKey
 		}
 
 		for _, key := range invalidKeys {
 			_, err := aes.NewCipher([]byte(key))
 			if err == nil {
-				t.Errorf("Expected error for invalid key size: %q", key)
+				t.Errorf("Expected error for invalid encKey size: %q", key)
 			}
 		}
 	})

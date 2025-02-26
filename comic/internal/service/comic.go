@@ -33,19 +33,7 @@ func (c *comicService) Index(ctx context.Context) ([]domain.Comic, error) {
 }
 
 func (c *comicService) GetComicByID(ctx context.Context, comicId int64) (*domain.Comic, error) {
-	comic, err := c.cr.Get(ctx, comicId)
-	if err != nil {
-		return nil, err
-	}
-
-	cover, err := c.cvr.GetActive(ctx, comicId)
-	if err != nil {
-		return nil, err
-	}
-
-	comic.CoverUrl = cover.FileKey
-
-	return comic, nil
+	return c.cr.Get(ctx, comicId)
 }
 
 func (c *comicService) NewComic(ctx context.Context, title, description, author, artist, comicStatus, comicType string, names []string) (*domain.Comic, error) {

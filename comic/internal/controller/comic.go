@@ -16,12 +16,13 @@ import (
 
 type ComicController struct {
 	pb.UnimplementedComicServiceServer
-	cs service.ComicService
+	cs  service.ComicService
+	cvs service.CoverService
 }
 
-func NewComicController(cs service.ComicService) *ComicController {
+func NewComicController(cs service.ComicService, cvs service.CoverService) *ComicController {
 	return &ComicController{
-		cs: cs,
+		cs: cs, cvs: cvs,
 	}
 }
 
@@ -78,6 +79,15 @@ func (cc *ComicController) GetComicBySlug(ctx context.Context, req *pb.GetComicB
 	}
 
 	// get cover as well
+	cover, err := cc.cvs.GetActive(ctx, comic.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
 
 	return &pb.GetComicBySlugResponse{
 		Comic: &pb.Comic{
@@ -90,6 +100,12 @@ func (cc *ComicController) GetComicBySlug(ctx context.Context, req *pb.GetComicB
 			Status:      comic.Status.String(),
 			Type:        comic.Type.String(),
 			Genres:      comic.Genres,
+		},
+		Cover: &pb.Cover{
+			Id:        cover.ID,
+			ComicId:   cover.ComicID,
+			FileKey:   cover.FileKey,
+			IsCurrent: cover.IsCurrent,
 		},
 	}, nil
 }

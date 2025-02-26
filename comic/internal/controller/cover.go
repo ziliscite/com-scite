@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"errors"
 	"github.com/ziliscite/com-scite/comic/internal/service"
 	pb "github.com/ziliscite/com-scite/comic/pkg/protobuf"
 	"google.golang.org/grpc/codes"
@@ -58,7 +59,16 @@ func (c *CoverController) UploadCover(stream pb.CoverService_UploadCoverServer) 
 
 	cover, err := c.cvs.UploadImage(ctx, imageData, fn, ci)
 	if err != nil {
-		return status.Errorf(codes.Internal, "cannot save image to the store: %v", err)
+		switch {
+		case errors.Is(err, service.ErrValidation):
+			return status.Errorf(codes.InvalidArgument, "cannot upload image: %v", err)
+		case errors.Is(err, service.ErrDuplicate):
+			return status.Errorf(codes.AlreadyExists, "cannot upload image: %v", err)
+		case errors.Is(err, service.ErrNotFound):
+			return status.Errorf(codes.NotFound, "cannot upload image: %v", err)
+		default:
+			return status.Errorf(codes.Internal, "cannot upload image: %v", err)
+		}
 	}
 
 	// send the response to client

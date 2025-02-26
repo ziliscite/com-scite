@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
-	enc := encryptor.NewEncryptor(os.Getenv("KEY"))
+	enc, err := encryptor.NewEncryptor(os.Getenv("KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	store := repository.NewStore(enc)
 
 	httpServer := controller.NewHttpServer(store)
