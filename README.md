@@ -1,5 +1,5 @@
 ## Introduction
-This project will be dedicated my 19-year-old self
+Comic reader (like asurascans and stuff) microservice backend
 
 ## Architecture
 Rough explanation of what each service should be doing
